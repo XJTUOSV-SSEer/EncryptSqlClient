@@ -1,0 +1,3 @@
+/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/cmake-build-debug/CMakeFiles/EncryptSqlClient.dir
+/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/cmake-build-debug/CMakeFiles/rebuild_cache.dir
