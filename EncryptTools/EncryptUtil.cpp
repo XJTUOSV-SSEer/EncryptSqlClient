@@ -36,6 +36,13 @@ unsigned char* StringToUchar(string& input){
     }
     return output;
 }
+pair<unsigned char*,int> StringToUchar2(string& input){
+    unsigned char *output = new unsigned char[input.size()];
+    for(int i=0;i<input.size();i++) {
+        output[i] = input[i];
+    }
+    return pair<unsigned char*,int>(output,input.size());
+}
 
 unsigned char* KeyGeneratorBin(int length) {
     unsigned char *key = (unsigned char *) malloc(length);

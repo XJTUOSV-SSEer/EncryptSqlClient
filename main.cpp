@@ -103,28 +103,35 @@ void testInsert(pair<string,string> kv) {
         exit_nicely(conn);
     }
 
+    string key = kv.first;
+    string val = kv.second;
+    pair<unsigned char*,int> res1 = StringToUchar2(key);
+    pair<unsigned char*,int> res2 = StringToUchar2(val);
     // 准备 SQL 语句
-    const char *stmtName = "insert_statement";
-    const char *sql = "INSERT INTO kvtest (key, value) VALUES ($1, $2);";
+    const unsigned char *key_uc = res1.first;
+    const unsigned char *val_uc = res2.first;
+    // 示例二进制数据
 
-    // 预处理 SQL 语句
-    PGresult *res = PQprepare(conn, stmtName, sql, 2, nullptr);
+    // 转义二进制数据，以便在 SQL 语句中使用
+    size_t escaped_data1_len;
+    size_t escaped_data2_len;
+    unsigned char *escaped_data_1 = PQescapeByteaConn(conn, key_uc, res1.second, &escaped_data1_len);
+    unsigned char *escaped_data_2 = PQescapeByteaConn(conn, val_uc, res2.second, &escaped_data2_len);
 
-    // 检查预处理结果状态
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        std::cerr << "Preparation of insert statement failed: " << PQerrorMessage(conn) << std::endl;
-        PQclear(res);
+    if (escaped_data_1 == nullptr || escaped_data_2 == nullptr) {
+        std::cerr << "Failed to escape binary data" << std::endl;
         exit_nicely(conn);
     }
-    PQclear(res);  // 清理预处理结果
 
-    // 要插入的参数值
+    // 准备 SQL 插入语句
+    const char *sql = "INSERT INTO kvtest (key,value) VALUES ($1,$2);";
     const char *paramValues[2];
-    paramValues[0] = kv.first.c_str();  // 第一个参数值
-    paramValues[1] = kv.second.c_str();  // 第二个参数值
+    // 使用参数化查询插入二进制数据
+    paramValues[0] = {reinterpret_cast<const char *>(escaped_data_1)};
+    paramValues[1] = {reinterpret_cast<const char *>(escaped_data_2)};
+    // 转义后的数据作为参数传递
 
-    // 执行参数化插入操作
-    res = PQexecPrepared(conn, stmtName, 2, paramValues, nullptr, nullptr, 0);
+    PGresult *res = PQexecParams(conn, sql, 2, nullptr, paramValues, nullptr, nullptr, 0);
 
     // 检查插入操作结果状态
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
