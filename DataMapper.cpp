@@ -11,6 +11,7 @@
 #include<fstream>
 #include<sstream>
 
+#include "main.h"
 #include "DO/RowMultiMap.h"
 using namespace std;
 
@@ -33,8 +34,8 @@ RowMultiMap DataMapper::rowMapperConstruct(int tableID, vector<vector<string> > 
 			auto* ciphertext = new unsigned char[textlen];
 
 			string MMType = "row";
-			string key =KeyGenerator(32);
-			string iv = KeyGenerator(16);
+			string key =DATA_KEY_1;
+			string iv = DATA_IV_1;
 
 			int cipertext_len = Crypto_Primitives::sym_encrypt(plaintext,textlen*8,StringToUchar(key),StringToUchar(iv),ciphertext);
 			row.emplace_back(reinterpret_cast<char*>(ciphertext),cipertext_len);
