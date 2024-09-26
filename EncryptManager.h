@@ -22,7 +22,7 @@ class EncryptManager {
      * @param mm
      * @return
      */
-    pair<unsigned char*,EncryptedMultiMap> setup(RowMultiMap mm);
+    EncryptedMultiMap setup(RowMultiMap mm);
 
     /**
      * 根据索引构建 token，此处是 sigma token。

@@ -18,7 +18,7 @@ EncryptManager:: EncryptManager(string key_1, string key_2){
     this->key_2 = key_2;
 }
 
-pair<unsigned char*,EncryptedMultiMap> EncryptManager::setup(RowMultiMap mm) {
+EncryptedMultiMap EncryptManager::setup(RowMultiMap mm) {
     /*
      *
      */
@@ -43,6 +43,7 @@ pair<unsigned char*,EncryptedMultiMap> EncryptManager::setup(RowMultiMap mm) {
         }
 
     }
+    return encr_multi_map;
 }
 
 vector<string> EncryptManager::token(const vector<string>& indexes) {
