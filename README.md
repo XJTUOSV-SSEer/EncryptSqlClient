@@ -4,7 +4,7 @@
 
 ## To-Do
 
-- [ ] 构建 pgSql connector
+- [ ] 构建 pgSql connector 
 
 - [ ] 完成 DataMapper：可以根据传入的参数从数据构建对应的 MultiMap
 
