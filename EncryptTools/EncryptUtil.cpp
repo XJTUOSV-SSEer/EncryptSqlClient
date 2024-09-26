@@ -63,3 +63,7 @@ unsigned char* padding16(string plainText) {
     return hexData;
 
 }
+
+int getUcharLength(unsigned char* input) {
+    return strlen(reinterpret_cast<char*>(input));
+}

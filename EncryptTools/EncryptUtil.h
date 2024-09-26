@@ -24,6 +24,7 @@ string KeyGenerator(int length);
  */
 string UcharToString(unsigned char* input);
 unsigned char* StringToUchar(string& input);
+int getUcharLength(unsigned char* input);
 /**
  * 将字符串填充到 16 字节倍数并返回对应的unsigned char，在加密函数调用时使用。
  * @param plainText
