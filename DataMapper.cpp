@@ -10,36 +10,46 @@
 #include<vector>
 #include<fstream>
 #include<sstream>
+
+#include "DO/RowMultiMap.h"
 using namespace std;
 
 
-map<string, vector<string>> DataMapper::rowMapperConstruct(int tableID, vector<vector<string> > inData) {
-	map<string, vector<string>> map;
+RowMultiMap DataMapper::rowMapperConstruct(int tableID, vector<vector<string> > inData) {
+	RowMultiMap mmap;
 	const int row_size = inData.size();
 	const int
 			col_size = inData[0].size();
 
 	int row_index = 0, col_index = 0;
-	for(;col_index < col_size; col_index++) {
-		for(row_index = 0; row_index < row_size; row_index++) {
-			int str_size = inData[row_index][col_index].size();
-			int plaintext_len = str_size - str_size % 16 + 16;
+	for(;row_index < row_size; row_index++) {
+		pair index(tableID,row_index);
+		vector<int> row_text_len;
+		vector<string> row;
+		for(col_index = 0; col_index < col_size; col_index++) {
+			string text = inData[row_index][col_index];
+			auto* plaintext = padding16(text);
+			int textlen  = strlen(reinterpret_cast<char*>(plaintext));
+			auto* ciphertext = new unsigned char[textlen];
 
-			auto* plaintext = new unsigned char[str_size];
-			Crypto_Primitives::string2char(inData[row_index][col_index],plaintext);
+			string MMType = "row";
+			string key =KeyGenerator(32);
+			string iv = KeyGenerator(16);
 
-			string key = KeyGenerator(32);
-			string iv  = KeyGenerator(16);
-			unsigned char* ciphertext = new unsigned char[plaintext_len];
-
-			Crypto_Primitives::sym_encrypt(plaintext, plaintext_len, StringToUchar(key),
-			StringToUchar(iv), ciphertext);
-
-
+			int cipertext_len = Crypto_Primitives::sym_encrypt(plaintext,textlen*8,StringToUchar(key),StringToUchar(iv),ciphertext);
+			row.emplace_back(reinterpret_cast<char*>(ciphertext),cipertext_len);
+			row_text_len.emplace_back(cipertext_len);
 		}
+		mmap.add(index,row,row_text_len);
 	}
-	return map;
+	return mmap;
 }
+
+RowMultiMap DataMapper::rowMapperDecrypt(RowMultiMap rmm) {
+
+}
+
+
 
 vector<vector<string>> DataMapper::fileReader(const string& fileName) {
     ifstream inFile;

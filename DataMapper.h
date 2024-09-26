@@ -12,6 +12,8 @@
 #include<fstream>
 #include <map>
 #include<sstream>
+
+#include "DO/RowMultiMap.h"
 using namespace std;
 
 /**
@@ -26,7 +28,8 @@ class DataMapper {
      * @param inData
      * @return
      */
-    static map<string,vector<string>> rowMapperConstruct(int tableID,vector<vector<string>> inData);
+    static RowMultiMap rowMapperConstruct(int tableID,vector<vector<string>> inData);
+    static RowMultiMap rowMapperDecrypt(RowMultiMap rmm);
 
     /**
      *
