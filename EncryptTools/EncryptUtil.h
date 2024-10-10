@@ -17,7 +17,7 @@ using namespace std;
  * @param length
  * @return
  */
-string KeyGenerator(int length);
+string KeyGeneratorForCP(int length);
 
 /**
  * unsigned char数组与string相互转换的工具函数
@@ -34,3 +34,4 @@ int getUcharLength(unsigned char* input);
  */
 unsigned char* padding16(string plainText);
 int ucharLen(unsigned char* input);
+unsigned char* joinByArrow(const unsigned char* c1,int c1_len,const unsigned char* c2,int c2_len);

@@ -29,7 +29,7 @@ class DataMapper {
      * @return
      */
     static RowMultiMap rowMapperConstruct(int tableID,vector<vector<string>> inData);
-    static RowMultiMap rowMapperDecrypt(RowMultiMap rmm);
+    static vector<vector<string>> rowMapperDecrypt(RowMultiMap rmm);
 
     /**
      *

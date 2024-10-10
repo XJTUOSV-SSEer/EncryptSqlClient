@@ -25,7 +25,7 @@ EncryptedMultiMap EncryptManager::setup(RowMultiMap mm) {
     EncryptedMultiMap encr_multi_map;
 
 
-    set<string> keys = mm.getKeys();
+    vector<string> keys = mm.getKeys();
     /*
      * 先遍历 MM 的 key，也就是数据库行的索引信息，得到每个行向量
      */

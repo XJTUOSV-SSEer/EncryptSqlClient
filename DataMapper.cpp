@@ -19,8 +19,7 @@ using namespace std;
 RowMultiMap DataMapper::rowMapperConstruct(int tableID, vector<vector<string> > inData) {
 	RowMultiMap mmap;
 	const int row_size = inData.size();
-	const int
-			col_size = inData[0].size();
+	const int col_size = inData[0].size();
 
 	int row_index = 0, col_index = 0;
 	for(;row_index < row_size; row_index++) {
@@ -45,9 +44,26 @@ RowMultiMap DataMapper::rowMapperConstruct(int tableID, vector<vector<string> > 
 	}
 	return mmap;
 }
+vector<vector<string>> DataMapper::rowMapperDecrypt(RowMultiMap rmm) {
+	string enc_key =DATA_KEY_1;
+	string enc_iv =DATA_IV_1;
 
-RowMultiMap DataMapper::rowMapperDecrypt(RowMultiMap rmm) {
-
+	vector<vector<string>> result;
+	vector<string> keys = rmm.getKeys();
+	for(auto key : keys) {
+		vector<string> res_row;
+		vector<string> row = rmm.get(key);
+		vector<int> text_len = rmm.getCipertextLength(key);
+		for(int i=0;i<row.size();i++) {
+			int textlen = text_len[i];
+			string text = row[i];
+			auto* plaintext = new unsigned char[textlen];
+			Crypto_Primitives::sym_decrypt(StringToUchar(text),textlen,StringToUchar(enc_key),StringToUchar(enc_iv),plaintext);
+			res_row.emplace_back(reinterpret_cast<char*>(plaintext),textlen);
+		}
+		result.emplace_back(res_row);
+	}
+	return result;
 }
 
 

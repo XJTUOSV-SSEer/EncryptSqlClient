@@ -20,8 +20,6 @@ add_executable(EncryptSqlClient main.cpp
         EncryptTools/Crypto_Primitives.h
         EncryptTools/EncryptUtil.cpp
         EncryptTools/EncryptUtil.h
-        DataBase/MySqlClient.cpp
-        DataBase/MySqlClient.h
         DO/EncKey.cpp
         DO/EncKey.h
         DO/EncryptedMultiMap.cpp
@@ -34,7 +32,8 @@ add_executable(EncryptSqlClient main.cpp
 )
 
 target_link_libraries(EncryptSqlClient /opt/homebrew/Cellar/openssl@3/3.3.2/lib/libssl.3.dylib /opt/homebrew/Cellar/openssl@3/3.3.2/lib/libcrypto.dylib)
-target_link_libraries(EncryptSqlClient /usr/local/mysql-connector-c++-9.0.0/lib64/libmysqlcppconn.10.dylib)
+#target_link_libraries(EncryptSqlClient /usr/local/mysql-connector-c++-9.0.0/lib64/libmysqlcppconn.10.dylib)
 target_link_libraries(EncryptSqlClient /usr/local/pgsql/lib/libpq.5.14.dylib)
+target_link_libraries(EncryptSqlClient /opt/homebrew/Cellar/seal/4.1.2/lib/libseal.4.1.2.dylib)
 
 

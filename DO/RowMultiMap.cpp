@@ -46,6 +46,8 @@ vector<int> RowMultiMap::getCipertextLength(pair<int,int> p_index) {
     return result;
 }
 
-set<string> RowMultiMap::getKeys() {
-    return this->keys;
+vector<string> RowMultiMap::getKeys() {
+    vector<string> result;
+    result.assign(keys.begin(), keys.end());
+    return result;
 }

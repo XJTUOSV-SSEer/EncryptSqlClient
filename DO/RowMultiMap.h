@@ -68,7 +68,7 @@ public:
      * 获得所有索引
      * @return 索引向量
      */
-    set<string> getKeys();
+    vector<string> getKeys();
  /**
      * 重载了输出操作符
      */

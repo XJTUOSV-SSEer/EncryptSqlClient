@@ -5,7 +5,7 @@
 #include <random>
 
 
-string KeyGenerator(int length) {
+string KeyGeneratorForCP(int length) {
     string RAND_STRING_DICTIONARY = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     std::random_device rd;  // 随机设备
     std::mt19937 generator(rd());  // Mersenne Twister 随机数生成器
@@ -73,4 +73,24 @@ unsigned char* padding16(string plainText) {
 
 int getUcharLength(unsigned char* input) {
     return strlen(reinterpret_cast<char*>(input));
+}
+
+unsigned char* joinByArrow(const unsigned char* c1,int c1_len,const unsigned char* c2,int c2_len) {
+    int uCharLength = c1_len + c2_len +2;
+    auto* output = new unsigned char[uCharLength];
+    for(int i=0;i<(uCharLength);i++) {
+        if(i<c1_len) {
+            output[i] = c1[i];
+        }
+        else if(i==c1_len) {
+            output[i] = '=';
+        }
+        else if(i==c1_len+1) {
+            output[i] = '>';
+        }
+        else {
+            output[i] = c2[i-c1_len-2];
+        }
+    }
+    return output;
 }
