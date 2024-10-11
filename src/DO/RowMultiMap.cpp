@@ -8,9 +8,10 @@
 
 RowMultiMap::RowMultiMap() {
     this->maps.empty();
-    this->columnsIndex.empty();
     this->ciperTextLenMap.empty();
+    this->columnsTypes.empty();
 };
+
 
 void RowMultiMap::add(const string& index, vector<string>& inputData,vector<int> cipertextLength) {
     keys.insert(index);
@@ -51,3 +52,14 @@ vector<string> RowMultiMap::getKeys() {
     result.assign(keys.begin(), keys.end());
     return result;
 }
+
+bool RowMultiMap::isEmpty() {
+    return maps.empty(); }
+
+void RowMultiMap::setColumnsTypes(vector<string> columnsTypes){
+    this->columnsTypes = std::move(columnsTypes); }
+string RowMultiMap::getTypesByColumnsID(int columnsID){
+    return columnsTypes[columnsID];
+}
+
+

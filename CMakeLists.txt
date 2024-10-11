@@ -29,8 +29,12 @@ add_executable(EncryptSqlClient src/main.cpp
         src/main.h
         src/EncryptManager.cpp
         src/EncryptManager.h
-        src/tests.cpp
+        src/testsArchive.cpp
+        src/testsArchive.h
 )
+
+include_directories("/Library/Frameworks/Python.framework/Versions/3.11/include/python3.11")
+
 
 target_link_libraries(EncryptSqlClient /opt/homebrew/Cellar/openssl@3/3.3.2/lib/libssl.3.dylib /opt/homebrew/Cellar/openssl@3/3.3.2/lib/libcrypto.dylib)
 #target_link_libraries(EncryptSqlClient /usr/local/mysql-connector-c++-9.0.0/lib64/libmysqlcppconn.10.dylib)

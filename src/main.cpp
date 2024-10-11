@@ -14,6 +14,9 @@
 
 #include<gmpxx.h>
 #include<gmp.h>
+
+#include <pybind11/embed.h> // 用于嵌入 Python 解释器
+namespace py = pybind11;
 using namespace std;
 using namespace seal;
 
@@ -93,11 +96,11 @@ void testPaillier() {
 
 	 //输出明文m,g
 	 //十进制输出是%Zd,十六进制输出是%ZX,folat使用&Ff
-	 gmp_printf("p = %Zd\n\n", p);
-	 gmp_printf("q = %Zd\n\n", q);
-	 gmp_printf("r = %Zd\n\n", r);
-	 gmp_printf("g = %Zd\n\n", g);
-	 gmp_printf("λ = %Zd\n\n", y3);
+	 //gmp_printf("p = %Zd\n\n", p);
+	 //gmp_printf("q = %Zd\n\n", q);
+	 //gmp_printf("r = %Zd\n\n", r);
+	 //gmp_printf("g = %Zd\n\n", g);
+	 //gmp_printf("λ = %Zd\n\n", y3);
 	 //输出密文
 	 gmp_printf("明文m = %Zd\n\n", m);
 	 gmp_printf("密文c = %Zd\n\n",c);
@@ -198,13 +201,39 @@ void testSeal() {
     decryptor.decrypt(encrypted_v3,decrypted_plaintext);
     int res = hexStringToInt(decrypted_plaintext.to_string());
     // 解码
-    cout << "Decrypted value:" << res << endl;
+    cout << "Decrypted value:" << res << '\n' <<endl;
 
 
 }
-
+// void testPythonScript() {
+//	py::module_ script = py::module_::import("pythonScripts.scriptZPaillier"); // 导入 Python 脚本
+//	py::object result = script.attr("addInPlaceReturnPlainValue")(5, 3);        // 调用函数
+//	int sum = result.cast<int>();                        // 转换结果
+//	std::cout << "结果是：" << sum << std::endl;
+//}
 
 int main() {
+    EncryptionParameters parms(scheme_type::bfv);
+
+    // 设置多项式的模数（多项式环的大小），必须为2的幂次方
+    size_t poly_modulus_degree = 4096;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+
+    // 设置系数模数
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+
+    // 设置纯文本模数（加密运算的模数）
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+
+    // 创建SEALContext对象
+    SEALContext context(parms);
+
+    // 生成密钥
+    KeyGenerator keygen(context);
+    SecretKey secret_key = keygen.secret_key();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
+
     /*
      * 测试一下加密函数
      */
@@ -213,9 +242,9 @@ int main() {
     /*
      * 测试一下 Setup 函数
      */
-
-   // vector<vector<string>> tables = {{"czt","81","Good"},{"zhg","81","Goode"}};
-    //RowMultiMap mm = DataMapper::rowMapperConstruct(0,tables);
+    vector<string> types = {"string","int","string"};
+    vector<vector<string>> tables = {{"czt","81","Good"},{"zhg","81","Goode"}};
+    RowMultiMap mm = DataMapper::rowMapperConstruct(0,tables,types,public_key);
 //
     //EncryptManager encrypt_manager = EncryptManager();
     //EncryptedMultiMap emm = encrypt_manager.setup(mm);
@@ -226,7 +255,8 @@ int main() {
     //}
 
     testSeal();
-    //testPaillier();
+    testPaillier();
+	//testPythonScript();
 
 
     return 0;
