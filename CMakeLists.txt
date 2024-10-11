@@ -12,28 +12,29 @@ set(CMAKE_CXX_STANDARD 20)
 
 
 
-add_executable(EncryptSqlClient main.cpp
-        main.h
-        DataMapper.cpp
-        DataMapper.h
-        EncryptTools/Crypto_Primitives.cpp
-        EncryptTools/Crypto_Primitives.h
-        EncryptTools/EncryptUtil.cpp
-        EncryptTools/EncryptUtil.h
-        DO/EncKey.cpp
-        DO/EncKey.h
-        DO/EncryptedMultiMap.cpp
-        DO/EncryptedMultiMap.h
-        DO/RowMultiMap.cpp
-        DO/RowMultiMap.h
-        main.h
-        EncryptManager.cpp
-        EncryptManager.h
+add_executable(EncryptSqlClient src/main.cpp
+        src/main.h
+        src/DataMapper.cpp
+        src/DataMapper.h
+        src/EncryptTools/Crypto_Primitives.cpp
+        src/EncryptTools/Crypto_Primitives.h
+        src/EncryptTools/EncryptUtil.cpp
+        src/EncryptTools/EncryptUtil.h
+        src/DO/EncKey.cpp
+        src/DO/EncKey.h
+        src/DO/EncryptedMultiMap.cpp
+        src/DO/EncryptedMultiMap.h
+        src/DO/RowMultiMap.cpp
+        src/DO/RowMultiMap.h
+        src/main.h
+        src/EncryptManager.cpp
+        src/EncryptManager.h
+        src/tests.cpp
 )
 
 target_link_libraries(EncryptSqlClient /opt/homebrew/Cellar/openssl@3/3.3.2/lib/libssl.3.dylib /opt/homebrew/Cellar/openssl@3/3.3.2/lib/libcrypto.dylib)
 #target_link_libraries(EncryptSqlClient /usr/local/mysql-connector-c++-9.0.0/lib64/libmysqlcppconn.10.dylib)
 target_link_libraries(EncryptSqlClient /usr/local/pgsql/lib/libpq.5.14.dylib)
 target_link_libraries(EncryptSqlClient /opt/homebrew/Cellar/seal/4.1.2/lib/libseal.4.1.2.dylib)
-
+target_link_libraries(EncryptSqlClient /opt/homebrew/Cellar/gmp/6.3.0/lib/libgmp.10.dylib /opt/homebrew/Cellar/gmp/6.3.0/lib/libgmpxx.4.dylib)
 

@@ -1,3 +1,6 @@
+//
+// Created by 陈志庭 on 24-10-10.
+//
 #include "main.h"
 
 #include <iostream>
@@ -36,51 +39,6 @@ void testAES() {
     Crypto_Primitives::sym_decrypt(ciphertext,cipertext_len,StringToUchar(key),StringToUchar(iv),plaintext2);
 
     cout << plaintext2 << endl;
-
-}
-void testSeal() {
-    EncryptionParameters parms(scheme_type::bfv);
-
-    // 设置多项式的模数（多项式环的大小），必须为2的幂次方
-    size_t poly_modulus_degree = 4096;
-    parms.set_poly_modulus_degree(poly_modulus_degree);
-
-    // 设置系数模数
-    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
-
-    // 设置纯文本模数（加密运算的模数）
-    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
-
-    // 创建SEALContext对象
-    SEALContext context(parms);
-
-    // 生成密钥
-    KeyGenerator keygen(context);
-    SecretKey secret_key = keygen.secret_key();
-    PublicKey public_key;
-    keygen.create_public_key(public_key);
-
-    // 创建加密器、解密器和编码器
-    Encryptor encryptor(context, public_key);
-    Decryptor decryptor(context, secret_key);
-    Evaluator evaluator(context);
-
-    // 要加密的整数
-    int value = 42;
-    Plaintext x_plain(uint64_to_hex_string(value));
-
-    // 加密
-    Ciphertext encrypted;
-    encryptor.encrypt(x_plain, encrypted);
-    cout << "Encrypted message: " << encrypted.size() << endl;
-
-    // 解密
-    Plaintext decrypted_plaintext;
-    decryptor.decrypt(encrypted, decrypted_plaintext);
-
-    // 解码
-    cout << "Decrypted value: 0x" << decrypted_plaintext.to_string() << endl;
-
 
 }
 /**
@@ -201,32 +159,4 @@ void testInsert(pair<string,string> kv) {
 
     // 关闭连接
     PQfinish(conn);
-}
-
-int main() {
-    /*
-     * 测试一下加密函数
-     */
-    //testAES();
-
-    /*
-     * 测试一下 Setup 函数
-     */
-
-    //vector<vector<string>> tables = {{"czt","81","Good"},{"zhg","81","Goode"}};
-    //RowMultiMap mm = DataMapper::rowMapperConstruct(0,tables);
-//
-    //EncryptManager encrypt_manager = EncryptManager();
-    //EncryptedMultiMap emm = encrypt_manager.setup(mm);
-//
-    //vector<string> keys = emm.getKeys();
-    //for(auto key : keys) {
-    //    testInsert(pair<string,string>(key,emm.get(key)));
-    //}
-
-    testSeal();
-
-
-
-    return 0;
 }

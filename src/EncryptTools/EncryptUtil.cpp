@@ -94,3 +94,28 @@ unsigned char* joinByArrow(const unsigned char* c1,int c1_len,const unsigned cha
     }
     return output;
 }
+int hexStringToInt(const std::string& hexStr) {
+    size_t idx = 0;
+    int result;
+
+    // 检查字符串是否为空
+    if (hexStr.empty()) {
+        throw std::invalid_argument("输入的字符串为空");
+    }
+
+    try {
+        // 使用 std::stoi 进行转换，基数为16
+        result = std::stoi(hexStr, &idx, 16);
+
+        // 检查是否有未处理的字符
+        if (idx != hexStr.length()) {
+            throw std::invalid_argument("包含非16进制字符");
+        }
+    } catch (const std::invalid_argument&) {
+        throw std::invalid_argument("无效的16进制字符串");
+    } catch (const std::out_of_range&) {
+        throw std::out_of_range("数值超出范围");
+    }
+
+    return result;
+}

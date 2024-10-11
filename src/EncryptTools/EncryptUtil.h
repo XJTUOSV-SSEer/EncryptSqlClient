@@ -35,3 +35,4 @@ int getUcharLength(unsigned char* input);
 unsigned char* padding16(string plainText);
 int ucharLen(unsigned char* input);
 unsigned char* joinByArrow(const unsigned char* c1,int c1_len,const unsigned char* c2,int c2_len);
+int hexStringToInt(const std::string& hexStr);
