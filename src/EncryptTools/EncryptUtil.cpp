@@ -21,27 +21,27 @@ string KeyGeneratorForCP(int length) {
 string UcharToString(unsigned char* input)
 {
     string output;
+
     int uchar_len =strlen(reinterpret_cast<char*>(input));
     for(int i=0;i<uchar_len;i++) {
         output.push_back(input[i]);
+
     }
+    delete[] input;
     return output;
 }
 
-
-unsigned char* StringToUchar(string& input){
-    unsigned char *output = new unsigned char[input.size()];
+//TODO，自动释放 unsigned char 或者 使用其他类型
+void StringToUchar(string input,unsigned char* output){
     for(int i=0;i<input.size();i++) {
         output[i] = input[i];
     }
-    return output;
 }
-pair<unsigned char*,int> StringToUchar2(string& input){
-    unsigned char *output = new unsigned char[input.size()];
+int StringToUchar2(string input,unsigned char* output){
     for(int i=0;i<input.size();i++) {
         output[i] = input[i];
     }
-    return pair<unsigned char*,int>(output,input.size());
+    return input.size();
 }
 
 unsigned char* KeyGeneratorBin(int length) {
@@ -52,13 +52,12 @@ unsigned char* KeyGeneratorBin(int length) {
     return key;
 };
 
-unsigned char* padding16(string plainText) {
+void padding16(string plainText,unsigned char* hexData) {
     int padLength = plainText.size();
     if(plainText.size() % 2 != 0) {
         padLength = plainText.size()-plainText.size() % 2 +2;
     }
 
-    auto* hexData = new unsigned char[padLength];
     for(int i=0;i<padLength;i++) {
         if(i<plainText.size()) {
             hexData[i] = plainText[i];
@@ -67,7 +66,6 @@ unsigned char* padding16(string plainText) {
             hexData[i] = '0';
         }
     }
-    return hexData;
 
 }
 

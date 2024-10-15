@@ -61,11 +61,19 @@ string EncryptManager::token(string index) {
 
 string EncryptManager::prfFunction(string full_index) {
     string str_key = this->key_1;
-    unsigned char* key = StringToUchar(str_key);
     int key_size = full_index.size() * 8;
-    auto* encrypted_key = new unsigned char[full_index.size()];
 
-    Crypto_Primitives::get_prf(key,StringToUchar(full_index),key_size,encrypted_key);
+    auto* encrypted_key = new unsigned char[full_index.size()];
+    auto* full_index_unsigned_char = new unsigned char[full_index.size()];
+    auto* key = new unsigned char[str_key.size()];
+
+    StringToUchar(full_index,full_index_unsigned_char);
+    StringToUchar(str_key,key);
+
+    Crypto_Primitives::get_prf(key,full_index_unsigned_char,key_size,encrypted_key);
+
+    delete[] full_index_unsigned_char;
+    delete[] key;
 
     return UcharToString(encrypted_key);
 }

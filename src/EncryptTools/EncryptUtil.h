@@ -23,16 +23,17 @@ string KeyGeneratorForCP(int length);
  * unsigned char数组与string相互转换的工具函数
  */
 string UcharToString(unsigned char* input);
-unsigned char* StringToUchar(string& input);
-pair<unsigned char*,int> StringToUchar2(string& input);
+void StringToUchar(string input,unsigned char* output);
+int StringToUchar2(string input,unsigned char* output);
 
 int getUcharLength(unsigned char* input);
 /**
  * 将字符串填充到 16 字节倍数并返回对应的unsigned char，在加密函数调用时使用。
  * @param plainText
+ * @param hexData
  * @return 
  */
-unsigned char* padding16(string plainText);
+void padding16(string plainText,unsigned char* hexData);
 int ucharLen(unsigned char* input);
 unsigned char* joinByArrow(const unsigned char* c1,int c1_len,const unsigned char* c2,int c2_len);
 int hexStringToInt(const std::string& hexStr);

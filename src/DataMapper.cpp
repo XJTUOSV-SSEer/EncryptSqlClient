@@ -3,72 +3,80 @@
 //
 
 #include "DataMapper.h"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <unistd.h>
+#include <vector>
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
-#include <iostream>
-#include<string>
-#include<vector>
-#include<fstream>
-#include<sstream>
 
-#include "main.h"
 #include "DO/RowMultiMap.h"
+#include "main.h"
 #include "seal/seal.h"
 using namespace std;
 using namespace seal;
 
-DataMapper::DataMapper() {
-	this->keyMap.clear();
+DataMapper::DataMapper(EncryptionParameters &parms) : context(parms), encryptor(context,initializePublicKey()) {
+    this->keyMap.clear();
 }
 
-void DataMapper::insertIntoRowBySymmetricEncryption(vector<string> &row, vector<int> &row_text_len,string text){
-    auto* plaintext = padding16(text);
-    int textlen  = strlen(reinterpret_cast<char*>(plaintext));
-    auto* ciphertext = new unsigned char[textlen];
+PublicKey DataMapper::initializePublicKey() {
+    KeyGenerator keygen(context);
+    keygen.create_public_key(public_key);
+    return public_key;
 
+}
+void DataMapper::insertIntoRowBySymmetricEncryption(vector<string> &row, vector<int> &row_text_len,const string& text){
     string MMType = "row";
     string key =DATA_KEY_1;
     string iv = DATA_IV_1;
 
-    int cipertext_len = Crypto_Primitives::sym_encrypt(plaintext,textlen*8,StringToUchar(key),StringToUchar(iv),ciphertext);
+    int padLength = text.size();
+    if(text.size() % 2 != 0) {
+        padLength = text.size()-text.size() % 2 +2;
+    }
 
 
-    row.emplace_back(reinterpret_cast<char*>(ciphertext),cipertext_len);
-    row_text_len.emplace_back(cipertext_len);
+    auto* plain_text = new unsigned char[padLength];
+    auto* ciphertext = new unsigned char[padLength];
+    auto* key_uc = new unsigned char[key.size()];
+    auto* iv_uc = new unsigned char[iv.size()];
+
+    StringToUchar(key,key_uc);
+    StringToUchar(iv,iv_uc);
+    StringToUchar(text,plain_text);
+
+    padding16(text,plain_text);
+    int cipertext_len = Crypto_Primitives::sym_encrypt(plain_text,padLength*8,key_uc,iv_uc,ciphertext);
+    string cipherStr = UcharToString(ciphertext);
+    row.push_back(cipherStr);
+    row_text_len.push_back(cipertext_len);
+
+    delete[] plain_text;
+    delete[] key_uc;
+    delete[] iv_uc;
 }
 
-void DataMapper::insertIntoRowByHomomorphicEncryption(vector<string> &row, vector<int> &row_text_len, int value,const PublicKey& public_key){
+void DataMapper::insertIntoRowByHomomorphicEncryption(vector<string> &row, vector<int> &row_text_len, int value){
     stringstream ss;
-
-    EncryptionParameters parms(scheme_type::bfv);
-
-    // 设置多项式的模数（多项式环的大小），必须为2的幂次方
-    size_t poly_modulus_degree = 4096;
-    parms.set_poly_modulus_degree(poly_modulus_degree);
-
-    // 设置系数模数
-    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
-
-    // 设置纯文本模数（加密运算的模数）
-    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
-
-    // 创建SEALContext对象
-    SEALContext context(parms);
-    Plaintext plaintext(uint64_to_hex_string(value));
+    string viewPlainText = intToHexString(value);
+    Plaintext plaintext(intToHexString(value));
     Ciphertext ciphertext;
-    Encryptor encryptor(context, public_key);
+    encryptor.encrypt(plaintext,ciphertext);
 
     ciphertext.save(ss);
 
-    row.emplace_back(ss.str());
-    string viewSS = ss.str();
-    row_text_len.emplace_back(ss.str().size());
+    row.push_back(ss.str());
+    row_text_len.push_back(ss.str().size());
 
+    ss.clear();
 }
 
 
 
-RowMultiMap DataMapper::rowMapperConstruct(int tableID, vector<vector<string> > inData,vector<string> columnsTypes,const PublicKey& public_key) {
+RowMultiMap DataMapper::rowMultiMapConstruct(int tableID, vector<vector<string> > inData,vector<string> columnsTypes) {
 	RowMultiMap mmap;
 	mmap.setColumnsTypes(columnsTypes);
 	const int row_size = inData.size();
@@ -85,8 +93,9 @@ RowMultiMap DataMapper::rowMapperConstruct(int tableID, vector<vector<string> > 
 
 		    if(type == "string") {
 		        insertIntoRowBySymmetricEncryption(row, row_text_len, text);
+
             } else if(type == "int") {
-		        insertIntoRowByHomomorphicEncryption(row,row_text_len,stoi(text),public_key);
+		        insertIntoRowByHomomorphicEncryption(row, row_text_len, stoi(text));
 		    }
 
 		}
@@ -98,6 +107,12 @@ vector<vector<string>> DataMapper::rowMapperDecrypt(RowMultiMap rmm) {
 	string enc_key =DATA_KEY_1;
 	string enc_iv =DATA_IV_1;
 
+    auto* enc_key_uc = new unsigned char[enc_key.size()];
+    auto* enc_iv_uc = new unsigned char[enc_iv.size()];
+
+    StringToUchar(enc_key,enc_key_uc);
+    StringToUchar(enc_iv,enc_iv_uc);
+
 	vector<vector<string>> result;
 	vector<string> keys = rmm.getKeys();
 	for(auto key : keys) {
@@ -108,11 +123,20 @@ vector<vector<string>> DataMapper::rowMapperDecrypt(RowMultiMap rmm) {
 			int textlen = text_len[i];
 			string text = row[i];
 			auto* plaintext = new unsigned char[textlen];
-			Crypto_Primitives::sym_decrypt(StringToUchar(text),textlen,StringToUchar(enc_key),StringToUchar(enc_iv),plaintext);
-			res_row.emplace_back(reinterpret_cast<char*>(plaintext),textlen);
+		    auto* ciphertext = new unsigned char[textlen];
+
+            StringToUchar(text,ciphertext);
+
+			Crypto_Primitives::sym_decrypt(ciphertext,textlen,enc_key_uc,enc_iv_uc,plaintext);
+			res_row.push_back(reinterpret_cast<char*>(plaintext));
+
+		    delete[] plaintext;
+		    delete[] ciphertext;
 		}
-		result.emplace_back(res_row);
+		result.push_back(res_row);
 	}
+    delete[] enc_key_uc;
+    delete[] enc_iv_uc;
 	return result;
 }
 
