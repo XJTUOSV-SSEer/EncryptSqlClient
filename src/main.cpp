@@ -211,12 +211,75 @@ void testSeal() {
 //	int sum = result.cast<int>();                        // 转换结果
 //	std::cout << "结果是：" << sum << std::endl;
 //}
+void exit_nicely(PGconn *conn) {
+    PQfinish(conn);
+    exit(1);
+}
+void testInsert(const pair<string,string>& kv,PGconn *conn) {
+
+
+    string key = kv.first;
+    string val = kv.second;
+
+    unsigned char *key_uc = new unsigned char[key.size()];
+    unsigned char *val_uc = new unsigned char[val.size()];
+
+    int res1_len = StringToUchar2(key,key_uc);
+    int res2_len = StringToUchar2(val,val_uc);
+
+    // 准备 SQL 语句
+
+
+    // 示例二进制数据
+
+    // 转义二进制数据，以便在 SQL 语句中使用
+    size_t escaped_data1_len;
+    size_t escaped_data2_len;
+
+    unsigned char *escaped_data_1 = PQescapeByteaConn(conn, key_uc, res1_len, &escaped_data1_len);
+    unsigned char *escaped_data_2 = PQescapeByteaConn(conn, val_uc, res2_len, &escaped_data2_len);
+
+    if (escaped_data_1 == nullptr || escaped_data_2 == nullptr) {
+        std::cerr << "Failed to escape binary data" << std::endl;
+        exit_nicely(conn);
+    }
+
+
+    // 准备 SQL 插入语句
+    //const char *sql =  R"(UPDATE kvHstore SET attr = attr || $1 :: hstore;)";
+    const char *sql = "INSERT INTO kvtest (key,value) VALUES ($1,$2);";
+    const char *paramValues[2];
+
+    // 使用参数化查询插入二进制数据
+    paramValues[0] = {reinterpret_cast<const char *>(escaped_data_1)};
+    paramValues[1] = {reinterpret_cast<const char *>(escaped_data_2)};
+
+    // 转义后的数据作为参数传递
+
+    PGresult *res = PQexecParams(conn, sql, 2, nullptr, paramValues, nullptr, nullptr, 0);
+
+    // 检查插入操作结果状态
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        std::cerr << "INSERT failed: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res);
+        exit_nicely(conn);
+    }
+
+    // 成功插入后输出提示
+    std::cout << "Data inserted successfully!" << std::endl;
+    PQclear(res);
+
+    delete[] key_uc;
+    delete[] val_uc;
+    delete[] escaped_data_1;
+    delete[] escaped_data_2;
+}
 
 int main() {
     EncryptionParameters parms(scheme_type::bfv);
 
     // 设置多项式的模数（多项式环的大小），必须为2的幂次方
-    size_t poly_modulus_degree = 4096;
+    size_t poly_modulus_degree = 2048;
     parms.set_poly_modulus_degree(poly_modulus_degree);
 
     // 设置系数模数
@@ -224,38 +287,40 @@ int main() {
 
     // 设置纯文本模数（加密运算的模数）
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
-
-    // 创建SEALContext对象
-    SEALContext context(parms);
-
-    // 生成密钥
-    KeyGenerator keygen(context);
-    SecretKey secret_key = keygen.secret_key();
-    PublicKey public_key;
-    keygen.create_public_key(public_key);
-
     /*
      * 测试一下加密函数
      */
     //testAES();
+    DataMapper data_mapper(parms);
 
     /*
      * 测试一下 Setup 函数
      */
     vector<string> types = {"string","int","string"};
-    vector<vector<string>> tables = {{"czt","81","Good"},{"zhg","81","Goode"}};
-    RowMultiMap mm = DataMapper::rowMapperConstruct(0,tables,types,public_key);
+    vector<vector<string>> tables = {{"czt","81","Good"},{"zhg","84","Goode"}};
+    RowMultiMap mm = data_mapper.rowMultiMapConstruct(0,tables,types);
 //
-    //EncryptManager encrypt_manager = EncryptManager();
-    //EncryptedMultiMap emm = encrypt_manager.setup(mm);
+    EncryptManager encrypt_manager = EncryptManager();
+    EncryptedMultiMap emm = encrypt_manager.setup(mm);
 //
-    //vector<string> keys = emm.getKeys();
-    //for(auto key : keys) {
-    //    testInsert(pair<string,string>(key,emm.get(key)));
-    //}
+    vector<string> keys = emm.getKeys();
+    string conninfo = PGSQL_CONNINFO;
+    PGconn *conn = PQconnectdb(conninfo.c_str());
+     //检查连接状态
+    if (PQstatus(conn) != CONNECTION_OK) {
+        std::cerr << "Connection to database failed: " << PQerrorMessage(conn) << std::endl;
+        exit_nicely(conn);
+    }
+    for(auto key : keys) {
+        testInsert(pair<string,string>(key,emm.get(key)),conn);
+    }
 
-    testSeal();
-    testPaillier();
+     //关闭连接
+    PQfinish(conn);
+
+//
+    //testSeal();
+    //testPaillier();
 	//testPythonScript();
 
 

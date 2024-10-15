@@ -8,6 +8,8 @@
 
 #endif //MAIN_H
 #include <string>
+#include <sstream>
+
 using namespace std;
 inline const string DATA_PATH = "/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/data/";
 inline const string DATA_KEY_1 = "XJTU_ESC_OqHn3xt0CsD1DOlBjkJsc3Q";
@@ -19,4 +21,9 @@ inline const string PGSQL_CONNINFO = "dbname=test user=chenzhiting password=1234
 inline std::string uint64_to_hex_string(std::uint64_t value)
 {
     return seal::util::uint_to_hex_string(&value, std::size_t(1));
+}
+inline std::string intToHexString(int num) {
+    std::stringstream ss;
+    ss << std::hex << num; // 将整数以16进制格式写入字符串流
+    return ss.str();
 }
