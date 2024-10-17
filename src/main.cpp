@@ -164,6 +164,7 @@ void testSeal() {
 
 
 }
+//TODO 实现对 Python 脚本的调用，以备不时之需。
 // void testPythonScript() {
 //	py::module_ script = py::module_::import("pythonScripts.scriptZPaillier"); // 导入 Python 脚本
 //	py::object result = script.attr("addInPlaceReturnPlainValue")(5, 3);        // 调用函数
@@ -217,35 +218,6 @@ void testInsert(const pair<string,string>& kv,PGconn *conn) {
         std::cout << "数据key插入成功！\n";
     }
     PQclear(res);
-    //PGresult *res2 = PQexecParams(conn,
-    //                             sql2,
-    //                             2,           // 参数个数
-    //                             NULL,        // 参数类型 OIDs，NULL 表示让服务器自行推断
-    //                             paramValues_2, // 参数值
-    //                             paramLengths_2,// 参数长度
-    //                             paramFormats_2,
-    //                             0);
-//
-    //// 准备 SQL 插入语句
-    ////const char *sql =  R"(UPDATE kvHstore SET attr = attr || $1 :: hstore;)";
-//
-//
-    //// 转义后的数据作为参数传递
-//
-//
-//
-    //// 检查插入操作结果状态
-//
-    //if (PQresultStatus(res2) != PGRES_COMMAND_OK) {
-    //    std::cerr << "执行value插入操作失败: " << PQerrorMessage(conn) << std::endl;
-    //} else {
-    //    std::cout << "数据value插入成功！\n";
-    //}
-
-
-    // 成功插入后输出提示
-    //PQclear(res2);
-
 
 }
 
@@ -293,7 +265,7 @@ void testFull() {
     string viewKey = index_to_keys["0,0,1"];
     string cipherData = testQuery1(index_to_keys["0,0,1"],conn);
     int view = data_mapper.decryptData(cipherData);
-
+    cout << view << endl;
 
     //关闭连接
     PQfinish(conn);
@@ -301,14 +273,7 @@ void testFull() {
 
 int main() {
    testFull();
-    //unsigned char t1[6] = { "hello"};
-    //string t2 = unsignedCharArrayToHexString(t1,6);
-    //vector<unsigned char> t3 = hexStringToUnsignedCharArray(t2);
-    //cout << t3.data() << endl;
-    //string value = emm.get(index_to_keys["0,0,1"]);
-    //int res = data_mapper.decryptData(value);
-    //cout << res << endl;
-//
+
     //testSeal();
     //testPaillier();
 	//testPythonScript();

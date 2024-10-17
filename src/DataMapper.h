@@ -48,6 +48,7 @@ public:
     PublicKey getPublicKey();
     private:
         string dataFilePath;
+    //TODO 一些 Seal 参数，需要抽象出去
         SEALContext context;
         KeyGenerator keygen;
         Encryptor encryptor;

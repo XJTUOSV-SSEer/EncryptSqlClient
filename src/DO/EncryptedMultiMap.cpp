@@ -8,7 +8,7 @@
 EncryptedMultiMap::EncryptedMultiMap() {
     this->KVmap.empty();
     this->keys.empty();
-    this->index_hex_key_map.empty();
+
 };
 
 vector<string> EncryptedMultiMap::getKeys() {
@@ -21,8 +21,5 @@ void EncryptedMultiMap::insert(string key, string value) {
 }
 string EncryptedMultiMap::get(string key) {
     return this->KVmap.at(key); }
-void EncryptedMultiMap::insertHexKey(const string& index, const string& hexKey){
-    this->index_hex_key_map.insert(make_pair(index, hexKey));
-}
 
 

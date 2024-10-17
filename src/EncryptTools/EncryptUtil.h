@@ -33,9 +33,23 @@ int getUcharLength(unsigned char* input);
  * @param hexData
  * @return 
  */
-void padding16(string plainText,unsigned char* hexData);
-int ucharLen(unsigned char* input);
-unsigned char* joinByArrow(const unsigned char* c1,int c1_len,const unsigned char* c2,int c2_len);
+void padding16(string plainText, unsigned char *hexData);
+/**
+ * 将十六进制字符串形式的的数字转换为 int 形式
+ * @param hexStr
+ * @return
+ */
 int hexStringToInt(const std::string& hexStr);
+/**
+ * 将unsigned char 数组转换成十六进制字符串以便查询
+ * @param data 待转换的unsigned char数组
+ * @param length unsigned char数组的长度
+ * @return
+ */
 string unsignedCharArrayToHexString(const unsigned char* data, size_t length);
+/**
+ * 将十六进制字符串转换为 unsigned char 数组
+ * @param hexString
+ * @return
+ */
 vector<unsigned char> hexStringToUnsignedCharArray(const std::string& hexString);
