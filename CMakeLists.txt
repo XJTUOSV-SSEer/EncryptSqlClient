@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD 20)
 #include_directories(${MYSQL_HEADER})
 # 添加 MySQL 外部库
 
-
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -O1")
 
 add_executable(EncryptSqlClient src/main.cpp
         src/main.h

@@ -18,39 +18,62 @@
 using namespace std;
 using namespace seal;
 
-DataMapper::DataMapper(EncryptionParameters &parms) : context(parms), encryptor(context,initializePublicKey()) {
+DataMapper::DataMapper(EncryptionParameters &parms) :
+    context(parms), keygen(context),
+    encryptor(context, initializePublicKey()),
+    decryptor(context, getSecretKey()) {
     this->keyMap.clear();
 }
 
 PublicKey DataMapper::initializePublicKey() {
-    KeyGenerator keygen(context);
     keygen.create_public_key(public_key);
     return public_key;
+}
+
+SecretKey DataMapper::getSecretKey() {
+    return keygen.secret_key();
+}
+PublicKey DataMapper::getPublicKey() {
+    return this->public_key; }
+
+int DataMapper::decryptData(string ciphertext){
+    stringstream ss(ciphertext);
+    Ciphertext ciphertext_tmp;
+    Plaintext plaintext_tmp;
+    ciphertext_tmp.load(context,ss);
+    decryptor.decrypt(ciphertext_tmp,plaintext_tmp);
+
+    return hexStringToInt(plaintext_tmp.to_string());
+
+
 
 }
+
+
 void DataMapper::insertIntoRowBySymmetricEncryption(vector<string> &row, vector<int> &row_text_len,const string& text){
     string MMType = "row";
     string key =DATA_KEY_1;
     string iv = DATA_IV_1;
 
     int padLength = text.size();
-    if(text.size() % 2 != 0) {
-        padLength = text.size()-text.size() % 2 +2;
+    if(text.size() % 16 != 0) {
+        padLength = text.size()-text.size() % 16 +16;
     }
 
 
     auto* plain_text = new unsigned char[padLength];
-    auto* ciphertext = new unsigned char[padLength];
+    auto* ciphertext = new unsigned char[padLength + 16];
     auto* key_uc = new unsigned char[key.size()];
     auto* iv_uc = new unsigned char[iv.size()];
 
     StringToUchar(key,key_uc);
     StringToUchar(iv,iv_uc);
-    StringToUchar(text,plain_text);
+    //StringToUchar(text,plain_text);
 
     padding16(text,plain_text);
-    int cipertext_len = Crypto_Primitives::sym_encrypt(plain_text,padLength*8,key_uc,iv_uc,ciphertext);
-    string cipherStr = UcharToString(ciphertext);
+    int cipertext_len = Crypto_Primitives::sym_encrypt(plain_text,padLength,key_uc,iv_uc,ciphertext);
+    //string cipherStr = UcharToString(ciphertext,cipertext_len);
+    string cipherStr = string(reinterpret_cast<const char*>(ciphertext), cipertext_len);
     row.push_back(cipherStr);
     row_text_len.push_back(cipertext_len);
 

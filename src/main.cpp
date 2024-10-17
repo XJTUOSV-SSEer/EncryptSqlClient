@@ -11,7 +11,11 @@
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
 #include "seal/seal.h"
-
+#include <iostream>
+#include <libpq-fe.h>
+#include <vector>
+#include "base64/base64.h"
+#include <cstdio>
 #include<gmpxx.h>
 #include<gmp.h>
 
@@ -20,133 +24,88 @@ namespace py = pybind11;
 using namespace std;
 using namespace seal;
 
-void testPaillier() {
-    clock_t time=clock();
-	 gmp_randstate_t grt;
-	 gmp_randinit_default(grt);
-	 gmp_randseed_ui(grt, time);
+// 函数：将 std::string 转换为 std::vector<char>
+void stringToChar(string str,char* output) {
+    for(int i=0;i<str.size();i++) {
+        output[i] = str[i];
+    }
+}
 
-	 //p、q初始化
-	 mpz_t p,q,p1,q1;
+string testQuery1(string key,PGconn *conn) {
 
-	 mpz_init(p);
-	 mpz_init(q);
-	 mpz_init(p1);
-	 mpz_init(q1);
+    if (PQstatus(conn) != CONNECTION_OK) {
+        std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
+        PQfinish(conn);
+        return nullptr;
+    } else {
+        std::cout << "已成功连接到数据库！\n";
+    }
 
-	 //p、q的的范围在0~2^128-1
-	 mpz_urandomb(p, grt, 128);
-	 mpz_urandomb(q, grt, 128);
+    // 执行查询
+    const char *query = R"(SELECT value_bytea FROM kvtest WHERE "key_bytea" = $1;)";
+    const char *paramValues[1];
+    int paramLengths[1];
+    int paramFormats[1];
 
-	  //生成p,q大素数
-	 mpz_nextprime(p, p);
-	 mpz_nextprime(q, q);
+    // 将参数转换为字符串（文本格式）
+    char* key_char =new char[key.size()+1];
+    stringToChar(key,key_char);
+    paramValues[0] = key_char;
+    paramLengths[0] = 0;// 对于文本格式参数，长度可以为 0
+    paramFormats[0] = 0; // 0 表示文本格式
 
-	 //求p，q的乘积 n,以及n的平方n2
-	 mpz_t n,n2;
+    // 执行参数化查询
+    //PGresult *res = PQexec(conn, query);
+    PGresult *res = PQexecParams(conn,
+                               query,
+                               1,           // 参数个数
+                               nullptr,        // 参数类型 OIDs，NULL 表示让服务器自行推断
+                                 paramValues, // 参数值
+                                 paramLengths, // 参数长度
+                                 paramFormats, // 参数格式
+                                 0);
 
-	 mpz_init(n);
-	 mpz_init(n2);
-	 mpz_mul(n,p,q);
-	 mpz_mul(n2,n,n);
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        std::cerr << "执行查询失败: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res);
+        PQfinish(conn);
+        return nullptr;
+    }
 
-	 //设置g,取值g=n+1
-	 mpz_t g,j;
 
-	 mpz_init(g);
-	 mpz_init_set_ui(j,1);
-	 mpz_urandomb(g, grt, 128);
-	 //mpz_add(g,n,j);
+    string::size_type len;
+    unsigned char *data = PQunescapeBytea((unsigned char*)PQgetvalue(res, 0, 0), (size_t*)&len);
+    //string data_str = UcharToString(data,len);
+    if (data == NULL) {
+        cerr << "未找到数据" << endl;
+        delete[] data;
 
-	 //设置明文m
-	 mpz_t m,m1;
-	 mpz_init_set_str(m,"22",10);
-	 mpz_init_set_str(m1,"33",10);
-	 mpz_t r;//设置r,r为随机数
-	 mpz_urandomb(r, grt, 128);
+        PQclear(res);
 
-	 //设置密文c,c1,需要对这两个密文做同态加法
-	 mpz_t c,c1;
+        return nullptr;
+    }
+    return  {reinterpret_cast<const char*>(data), len};
+    // 输出数据
 
-	 mpz_init(c);
-	 mpz_init(c1);
-	 //设置密文c
 
-	 mpz_powm(c,g,m,n2);
-	 mpz_powm(r,r,n,n2);
-	 mpz_mul(c,c,r);
-	 mpz_mod(c,c,n2);
 
-	 //设置密文c1
-	 mpz_powm(c1,g,m1,n2);
-	 mpz_mul(c1,c1,r);
-	 mpz_mod(c1,c1,n2);
+    // 如果需要将 bytea 数据保存为文件
+    /*
+    std::ofstream outfile("output.bin", std::ios::binary);
+    outfile.write(reinterpret_cast<const char*>(data), len);
+    outfile.close();
+    */
+    delete[] data;
+    delete[] key_char;
+    // 释放解码后的数据
+    PQfreemem(data);
 
-	 //解密过程
-	 //先求λ，是p、q的最小公倍数,y3代表λ
-	 mpz_t y1,y2,y3;
-
-	 mpz_init(y1);
-	 mpz_init(y2);
-	 mpz_init(y3);
-
-	 mpz_sub(p1,p,j);
-	 mpz_sub(q1,q,j);
-	 mpz_lcm(y3,p1,q1);//y3代表λ
-
-	 //输出明文m,g
-	 //十进制输出是%Zd,十六进制输出是%ZX,folat使用&Ff
-	 //gmp_printf("p = %Zd\n\n", p);
-	 //gmp_printf("q = %Zd\n\n", q);
-	 //gmp_printf("r = %Zd\n\n", r);
-	 //gmp_printf("g = %Zd\n\n", g);
-	 //gmp_printf("λ = %Zd\n\n", y3);
-	 //输出密文
-	 gmp_printf("明文m = %Zd\n\n", m);
-	 gmp_printf("密文c = %Zd\n\n",c);
-	 gmp_printf("明文m1 = %Zd\n\n", m1);
-	 gmp_printf("密文c = %Zd\n\n",c1);
-
-	 //两个密文做同态加法:密文做乘法，最后解密是明文做加法
-	 mpz_mul(c,c,c1);
-	 mpz_mod(c,c,n2);
-
-	 //y1代表c的λ次方摸n平方
-	 mpz_powm(y1,c,y3,n2);
-	 mpz_sub(y1,y1,j);
-	 mpz_div(y1,y1,n);
-
-	 //y2代表g的λ次方摸n平方
-	 mpz_powm(y2,g,y3,n2);
-	 mpz_sub(y2,y2,j);
-	 mpz_div(y2,y2,n);
-
-	 mpz_t x_y;
-	 mpz_init(x_y);
-	 mpz_invert(x_y,y2,n);//至关重要的一步，取逆
-
-	 mpz_mul(x_y,x_y,y1);
-	 mpz_mod(x_y,x_y,n);
-	 //输出明文
-	 gmp_printf("解密得到明文m = %Zd\n\n",x_y);
-	 mpz_clear(p);
-	 mpz_clear(q);
-	 mpz_clear(n);
-	 mpz_clear(n2);
-	 mpz_clear(p1);
-	 mpz_clear(q1);
-	 mpz_clear(c);
-	 mpz_clear(g);
-	 mpz_clear(j);
-	 mpz_clear(r);
-	 mpz_clear(m);
-	 mpz_clear(y2);
-	 mpz_clear(y1);
-	 mpz_clear(y3);
-	 mpz_clear(x_y);
+    // 清理资源
+    PQclear(res);
 
 
 }
+
 
 void testSeal() {
     stringstream ss;
@@ -221,61 +180,76 @@ void testInsert(const pair<string,string>& kv,PGconn *conn) {
     string key = kv.first;
     string val = kv.second;
 
-    unsigned char *key_uc = new unsigned char[key.size()];
-    unsigned char *val_uc = new unsigned char[val.size()];
-
-    int res1_len = StringToUchar2(key,key_uc);
-    int res2_len = StringToUchar2(val,val_uc);
-
-    // 准备 SQL 语句
 
 
-    // 示例二进制数据
+    int key_len = key.size();
+    int val_len = val.size();
 
-    // 转义二进制数据，以便在 SQL 语句中使用
-    size_t escaped_data1_len;
-    size_t escaped_data2_len;
+    char *key_copy = new char[key_len+1];
+    char *val_copy = new char[val_len+1];
 
-    unsigned char *escaped_data_1 = PQescapeByteaConn(conn, key_uc, res1_len, &escaped_data1_len);
-    unsigned char *escaped_data_2 = PQescapeByteaConn(conn, val_uc, res2_len, &escaped_data2_len);
+    stringToChar(key,key_copy);
+    stringToChar(val,val_copy);
 
-    if (escaped_data_1 == nullptr || escaped_data_2 == nullptr) {
-        std::cerr << "Failed to escape binary data" << std::endl;
-        exit_nicely(conn);
-    }
+    const char *paramValues_1[2] = {key_copy,val_copy};
+    int paramLengths_1[2] = {0,val_len};
+    int paramFormats_1[2] = {0,1};
 
+    //const char *paramValues_2[2] = {val_copy,key_copy};
+    //int paramLengths_2[1] = {0};
+    //int paramFormats_2[1] = {0};
 
-    // 准备 SQL 插入语句
-    //const char *sql =  R"(UPDATE kvHstore SET attr = attr || $1 :: hstore;)";
-    const char *sql = "INSERT INTO kvtest (key,value) VALUES ($1,$2);";
-    const char *paramValues[2];
+    const char *sql = "INSERT INTO kvtest (key_bytea,value_bytea) VALUES ($1,$2);";
+    const char *sql2 = "update kvtest set value_bytea = $1 where key_bytea = $2";
 
-    // 使用参数化查询插入二进制数据
-    paramValues[0] = {reinterpret_cast<const char *>(escaped_data_1)};
-    paramValues[1] = {reinterpret_cast<const char *>(escaped_data_2)};
+    PGresult *res = PQexecParams(conn,
+                                 sql,
+                                 2,           // 参数个数
+                                 NULL,        // 参数类型 OIDs，NULL 表示让服务器自行推断
+                                 paramValues_1, // 参数值
+                                 paramLengths_1,// 参数长度
+                                 paramFormats_1,
+                                 0);
 
-    // 转义后的数据作为参数传递
-
-    PGresult *res = PQexecParams(conn, sql, 2, nullptr, paramValues, nullptr, nullptr, 0);
-
-    // 检查插入操作结果状态
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        std::cerr << "INSERT failed: " << PQerrorMessage(conn) << std::endl;
-        PQclear(res);
-        exit_nicely(conn);
+        std::cerr << "执行key插入操作失败: " << PQerrorMessage(conn) << std::endl;
+    } else {
+        std::cout << "数据key插入成功！\n";
     }
+    PQclear(res);
+    //PGresult *res2 = PQexecParams(conn,
+    //                             sql2,
+    //                             2,           // 参数个数
+    //                             NULL,        // 参数类型 OIDs，NULL 表示让服务器自行推断
+    //                             paramValues_2, // 参数值
+    //                             paramLengths_2,// 参数长度
+    //                             paramFormats_2,
+    //                             0);
+//
+    //// 准备 SQL 插入语句
+    ////const char *sql =  R"(UPDATE kvHstore SET attr = attr || $1 :: hstore;)";
+//
+//
+    //// 转义后的数据作为参数传递
+//
+//
+//
+    //// 检查插入操作结果状态
+//
+    //if (PQresultStatus(res2) != PGRES_COMMAND_OK) {
+    //    std::cerr << "执行value插入操作失败: " << PQerrorMessage(conn) << std::endl;
+    //} else {
+    //    std::cout << "数据value插入成功！\n";
+    //}
+
 
     // 成功插入后输出提示
-    std::cout << "Data inserted successfully!" << std::endl;
-    PQclear(res);
+    //PQclear(res2);
 
-    delete[] key_uc;
-    delete[] val_uc;
-    delete[] escaped_data_1;
-    delete[] escaped_data_2;
+
 }
 
-int main() {
+void testFull() {
     EncryptionParameters parms(scheme_type::bfv);
 
     // 设置多项式的模数（多项式环的大小），必须为2的幂次方
@@ -299,14 +273,16 @@ int main() {
     vector<string> types = {"string","int","string"};
     vector<vector<string>> tables = {{"czt","81","Good"},{"zhg","84","Goode"}};
     RowMultiMap mm = data_mapper.rowMultiMapConstruct(0,tables,types);
-//
+    //
+    map<string,string> index_to_keys;
     EncryptManager encrypt_manager = EncryptManager();
-    EncryptedMultiMap emm = encrypt_manager.setup(mm);
-//
+    EncryptedMultiMap emm = encrypt_manager.setup(mm,index_to_keys);
+    //
+    string key = index_to_keys["0,0,1"];
     vector<string> keys = emm.getKeys();
     string conninfo = PGSQL_CONNINFO;
     PGconn *conn = PQconnectdb(conninfo.c_str());
-     //检查连接状态
+    //检查连接状态
     if (PQstatus(conn) != CONNECTION_OK) {
         std::cerr << "Connection to database failed: " << PQerrorMessage(conn) << std::endl;
         exit_nicely(conn);
@@ -314,10 +290,24 @@ int main() {
     for(auto key : keys) {
         testInsert(pair<string,string>(key,emm.get(key)),conn);
     }
+    string viewKey = index_to_keys["0,0,1"];
+    string cipherData = testQuery1(index_to_keys["0,0,1"],conn);
+    int view = data_mapper.decryptData(cipherData);
 
-     //关闭连接
+
+    //关闭连接
     PQfinish(conn);
+}
 
+int main() {
+   testFull();
+    //unsigned char t1[6] = { "hello"};
+    //string t2 = unsignedCharArrayToHexString(t1,6);
+    //vector<unsigned char> t3 = hexStringToUnsignedCharArray(t2);
+    //cout << t3.data() << endl;
+    //string value = emm.get(index_to_keys["0,0,1"]);
+    //int res = data_mapper.decryptData(value);
+    //cout << res << endl;
 //
     //testSeal();
     //testPaillier();

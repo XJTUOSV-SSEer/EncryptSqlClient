@@ -13,16 +13,17 @@ class EncryptManager {
     private:
     string key_1;
     string key_2;
-    string prfFunction(string full_index);
+
     public:
     EncryptManager();
     EncryptManager(string key_1, string key_2);
     /**
      * setup 函数，用于生成 EMM，此处密钥暂时用固定的代替。
      * @param mm
+     * @param idx2key
      * @return
      */
-    EncryptedMultiMap setup(RowMultiMap mm);
+    EncryptedMultiMap setup(RowMultiMap mm,map<string, string>&idx2key);
 
     /**
      * 根据索引构建 token，此处是 sigma token。
@@ -38,6 +39,6 @@ class EncryptManager {
     string token(string index);
 };
 
-
-
+string prfFunctionReturnString(const string& full_index);
+int prfFunctionReturnUnsignedChar(const string& full_index,unsigned char* encrypted_key);
 #endif //ENCRYPTMANAGER_H

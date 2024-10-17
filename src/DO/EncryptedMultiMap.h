@@ -5,6 +5,7 @@
 #ifndef ENCRYPTEDMULTIMAP_H
 #define ENCRYPTEDMULTIMAP_H
 #include <map>
+#include <pybind11/pytypes.h>
 #include <string>
 
 #include "RowMultiMap.h"
@@ -23,6 +24,7 @@ private:
      * 维护一个所有 key 也就是索引信息的集合，用于遍历。
      */
     vector<string> keys;
+    map<string,string> index_hex_key_map;
 public:
     EncryptedMultiMap();
 
@@ -32,7 +34,7 @@ public:
      * @param value 加密后的数据
      */
     void insert(string key, string value);
-
+    void insertHexKey(const string& index,const string& hexKey);
     /**
      * 从 MM 结构中直接载入数据，待完成
      * @param rmm MM 结构

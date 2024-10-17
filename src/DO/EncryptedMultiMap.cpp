@@ -3,10 +3,12 @@
 //
 
 #include "EncryptedMultiMap.h"
+#include "../EncryptTools/EncryptUtil.h"
 
 EncryptedMultiMap::EncryptedMultiMap() {
     this->KVmap.empty();
     this->keys.empty();
+    this->index_hex_key_map.empty();
 };
 
 vector<string> EncryptedMultiMap::getKeys() {
@@ -18,6 +20,9 @@ void EncryptedMultiMap::insert(string key, string value) {
     this->keys.push_back(key);
 }
 string EncryptedMultiMap::get(string key) {
-    return this->KVmap.at(key);
+    return this->KVmap.at(key); }
+void EncryptedMultiMap::insertHexKey(const string& index, const string& hexKey){
+    this->index_hex_key_map.insert(make_pair(index, hexKey));
 }
+
 

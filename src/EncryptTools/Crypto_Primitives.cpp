@@ -151,7 +151,7 @@ std::string Crypto_Primitives::get_rand(int num){
 }
 
 
-void Crypto_Primitives::get_prf(unsigned char* k,unsigned char* data,int len, unsigned char* v){
+int Crypto_Primitives::get_prf(unsigned char* k,unsigned char* data,int len, unsigned char* v){
     // 使用一个固定的16字节IV
     std::string s1="XJTU-OSV-PRF--IV";
     // s1.resize(16);
@@ -159,7 +159,7 @@ void Crypto_Primitives::get_prf(unsigned char* k,unsigned char* data,int len, un
     // 调用加密算法
     unsigned char c[16];
     string2char(s1,c);
-    sym_encrypt(data,len,k,(unsigned char*)c,v);
+    return  sym_encrypt(data,len,k,(unsigned char*)c,v);
 }
 
 

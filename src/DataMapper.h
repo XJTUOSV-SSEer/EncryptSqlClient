@@ -9,7 +9,9 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <seal/decryptor.h>
 #include <seal/encryptor.h>
+#include <seal/keygenerator.h>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -33,6 +35,7 @@ public:
      * @return
      */
     RowMultiMap rowMultiMapConstruct(int tableID, vector<vector<string>> inData,vector<string> columnsTypes);
+    int decryptData(string cipertext);
     static vector<vector<string>> rowMapperDecrypt(RowMultiMap rmm);
 
     /**
@@ -41,11 +44,16 @@ public:
      * @return
      */
     static vector<vector<string>> fileReader( const string& fileName);
+    SecretKey getSecretKey();
+    PublicKey getPublicKey();
     private:
         string dataFilePath;
         SEALContext context;
+        KeyGenerator keygen;
         Encryptor encryptor;
+        Decryptor decryptor;
         PublicKey public_key;
+        SecretKey secret_key;
         /**
          *  维护一个加密密钥的映射
          */

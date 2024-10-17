@@ -22,7 +22,7 @@ string KeyGeneratorForCP(int length);
 /**
  * unsigned char数组与string相互转换的工具函数
  */
-string UcharToString(unsigned char* input);
+string UcharToString(unsigned char* input,int uchar_len);
 void StringToUchar(string input,unsigned char* output);
 int StringToUchar2(string input,unsigned char* output);
 
@@ -37,3 +37,5 @@ void padding16(string plainText,unsigned char* hexData);
 int ucharLen(unsigned char* input);
 unsigned char* joinByArrow(const unsigned char* c1,int c1_len,const unsigned char* c2,int c2_len);
 int hexStringToInt(const std::string& hexStr);
+string unsignedCharArrayToHexString(const unsigned char* data, size_t length);
+vector<unsigned char> hexStringToUnsignedCharArray(const std::string& hexString);

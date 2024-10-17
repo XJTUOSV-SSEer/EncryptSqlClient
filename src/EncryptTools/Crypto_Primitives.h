@@ -57,7 +57,7 @@ public:
         return:
             none
     */
-    static void get_prf(unsigned char* k,unsigned char* data,int len, unsigned char* v);
+    static int get_prf(unsigned char* k,unsigned char* data,int len, unsigned char* v);
 
     /*
         对相同长度的字符串进行异或操作（通过按字节异或）
