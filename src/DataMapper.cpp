@@ -170,7 +170,7 @@ vector<vector<string>> DataMapper::fileReader(const string& fileName) {
 	inFile.open(fileName);
     string lineStr;
     vector<vector<string>> strArray;
-	getline(inFile, lineStr);
+	//getline(inFile, lineStr);
     while (getline(inFile, lineStr)) {
       cout << lineStr << endl;
       stringstream ss(lineStr);

@@ -14,7 +14,6 @@
 #include <iostream>
 #include <libpq-fe.h>
 #include <vector>
-#include "base64/base64.h"
 #include <cstdio>
 #include<gmpxx.h>
 #include<gmp.h>
@@ -31,6 +30,7 @@ void stringToChar(string str,char* output) {
     }
 }
 
+
 string testQuery1(string key,PGconn *conn) {
 
     if (PQstatus(conn) != CONNECTION_OK) {
@@ -42,7 +42,7 @@ string testQuery1(string key,PGconn *conn) {
     }
 
     // 执行查询
-    const char *query = R"(SELECT value_bytea FROM kvtest WHERE "key_bytea" = $1;)";
+    const char *query = R"(SELECT _value FROM kvtest WHERE "_key" = $1;)";
     const char *paramValues[1];
     int paramLengths[1];
     int paramFormats[1];
@@ -75,6 +75,7 @@ string testQuery1(string key,PGconn *conn) {
 
     string::size_type len;
     unsigned char *data = PQunescapeBytea((unsigned char*)PQgetvalue(res, 0, 0), (size_t*)&len);
+
     //string data_str = UcharToString(data,len);
     if (data == NULL) {
         cerr << "未找到数据" << endl;
@@ -106,64 +107,98 @@ string testQuery1(string key,PGconn *conn) {
 
 }
 
+unsigned char* testQuery2(vector<string> keys,PGconn *conn,string::size_type &len) {
 
-void testSeal() {
-    stringstream ss;
 
-    EncryptionParameters parms(scheme_type::bfv);
+    // 执行查询
+    const char *query = R"(select SUM_ex(_value) from kvtest where _key in ($1,$2,$3);)";
+    cout << "执行 sql 语句: " << query << endl;
+    const char *paramValues[3];
+    int paramLengths[3]={0,0,0};
+    int paramFormats[3]={0,0,0};// 0 表示文本格式
 
-    // 设置多项式的模数（多项式环的大小），必须为2的幂次方
-    size_t poly_modulus_degree = 4096;
-    parms.set_poly_modulus_degree(poly_modulus_degree);
+    // 将参数转换为字符串（文本格式）
+    for(int i=0;i<3;i++) {
+        const string& key = keys[i];
+        char* key_char =new char[key.size()+1];
+        stringToChar(key,key_char);
+        paramValues[i] = key_char;
+    }
 
-    // 设置系数模数
-    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
 
-    // 设置纯文本模数（加密运算的模数）
-    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
 
-    // 创建SEALContext对象
-    SEALContext context(parms);
+    // 执行参数化查询
+    //PGresult *res = PQexec(conn, query);
+    PGresult *res = PQexecParams(conn,
+                               query,
+                               3,           // 参数个数
+                               nullptr,        // 参数类型 OIDs，NULL 表示让服务器自行推断
+                                 paramValues, // 参数值
+                                 paramLengths, // 参数长度
+                                 paramFormats, // 参数格式
+                                 0);
 
-    // 生成密钥
-    KeyGenerator keygen(context);
-    SecretKey secret_key = keygen.secret_key();
-    PublicKey public_key;
-    keygen.create_public_key(public_key);
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        std::cerr << "执行查询失败: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res);
+        PQfinish(conn);
+        return nullptr;
+    }
 
-    // 创建加密器、解密器和编码器
-    Encryptor encryptor(context, public_key);
-    Decryptor decryptor(context, secret_key);
-    Evaluator evaluator(context);
 
-    // 要加密的整数
-    int value1 = 42;
-    int value2 = 32;
-    Plaintext x_plain1(uint64_to_hex_string(value1));
-    Plaintext x_plain2(uint64_to_hex_string(value2));
 
-    // 加密
-    Ciphertext encrypted_v1,encrypted_v2;
-    encryptor.encrypt(x_plain1, encrypted_v1);
-    encryptor.encrypt(x_plain2, encrypted_v2);
-    //cout << "Encrypted message size: " << encrypted.size() << endl;
+    unsigned char *data = PQunescapeBytea((unsigned char*)PQgetvalue(res, 0, 0), (size_t*)&len);
 
-    //相加
-    Ciphertext encrypted_v3;
-    evaluator.add(encrypted_v1,encrypted_v2,encrypted_v3);
-    encrypted_v3.save(ss);
+    //string data_str = UcharToString(data,len);
+    if (data == NULL) {
+        cerr << "未找到数据" << endl;
+        delete[] data;
 
-    string viewSS = ss.str();
-    cout << "CipherText's size is " <<viewSS.size() << endl;
-    // 解密
-    Plaintext decrypted_plaintext;
-    decryptor.decrypt(encrypted_v3,decrypted_plaintext);
-    int res = hexStringToInt(decrypted_plaintext.to_string());
-    // 解码
-    cout << "Decrypted value:" << res << '\n' <<endl;
+        PQclear(res);
+
+        return nullptr;
+    }
+    cout << "执行查询成功" << endl;
+    return  data;
+    // 输出数据
+
+
+
+    // 如果需要将 bytea 数据保存为文件
+    /*
+    std::ofstream outfile("output.bin", std::ios::binary);
+    outfile.write(reinterpret_cast<const char*>(data), len);
+    outfile.close();
+    */
 
 
 }
+unsigned char* testQuery3(PGconn *conn,string::size_type &bytea_len) {
+    // 3. 执行 SQL 查询
+    const char *query = "select SUM_ex(_value) from kvtest;";
+    PGresult *res = PQexec(conn, query);
+    // 4. 检查查询结果
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        std::cerr << "Query failed: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res);
+        PQfinish(conn);
+    }
+    // 5. 处理查询结果
+    const char *bytea_data = PQgetvalue(res, 0, 0);  // 获取 bytea 数据（它是经过转义的字符串）
+    // 6. 解码 bytea 数据
+    unsigned char *data = PQunescapeBytea((const unsigned char *)bytea_data, &bytea_len);
+    //string data_str = UcharToString(data,len);
+    if (data == NULL) {
+        cerr << "未找到数据" << endl;
+        delete[] data;
+        PQclear(res);
+        return nullptr;
+    }
+    return  data;
+    // 输出数据
+}
+
+
 //TODO 实现对 Python 脚本的调用，以备不时之需。
 // void testPythonScript() {
 //	py::module_ script = py::module_::import("pythonScripts.scriptZPaillier"); // 导入 Python 脚本
@@ -200,8 +235,9 @@ void testInsert(const pair<string,string>& kv,PGconn *conn) {
     //int paramLengths_2[1] = {0};
     //int paramFormats_2[1] = {0};
 
-    const char *sql = "INSERT INTO kvtest (key_bytea,value_bytea) VALUES ($1,$2);";
-    const char *sql2 = "update kvtest set value_bytea = $1 where key_bytea = $2";
+    const char *sql = "INSERT INTO kvtest (_key,_value) VALUES ($1,$2) ON CONFLICT(_key)"
+                      "DO UPDATE SET _value = $2 ";
+    const char *sql2 = "update kvtest set value_bytea = $1 where _key = $2";
 
     PGresult *res = PQexecParams(conn,
                                  sql,
@@ -214,66 +250,106 @@ void testInsert(const pair<string,string>& kv,PGconn *conn) {
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         std::cerr << "执行key插入操作失败: " << PQerrorMessage(conn) << std::endl;
-    } else {
-        std::cout << "数据key插入成功！\n";
     }
     PQclear(res);
 
 }
 
-void testFull() {
+vector<string> getKeysFromRows(string key,int key_column_no,vector<vector<string>> tables) {
+    vector<string> keys;
+    int size_row = tables.size();
+    int size_col = tables[0].size();
+    for(int i=0;i<size_row;i++) {
+        if(key == tables[i][key_column_no]) {
+            for(int j=0;j<size_col;j++) {
+                if(j==key_column_no)continue;
+                keys.push_back(format("0,{},{}",i,j));
+            }
+        }
+    }
+    return keys;
+}
+
+vector<string> keysToEncrptedKeys(vector<string> keys,map<string,string> index_to_keys) {
+    vector<string> keys_to_encrpted_keys;
+    for(int i=0;i<keys.size();i++) {
+        keys_to_encrpted_keys.push_back(index_to_keys[keys[i]]);
+    }
+    return keys_to_encrpted_keys;
+}
+
+void testAddEx() {
     EncryptionParameters parms(scheme_type::bfv);
 
-    // 设置多项式的模数（多项式环的大小），必须为2的幂次方
+    // 设置 SEAL 参数
     size_t poly_modulus_degree = 2048;
     parms.set_poly_modulus_degree(poly_modulus_degree);
-
-    // 设置系数模数
     parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
-
-    // 设置纯文本模数（加密运算的模数）
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
-    /*
-     * 测试一下加密函数
-     */
-    //testAES();
-    DataMapper data_mapper(parms);
 
-    /*
-     * 测试一下 Setup 函数
-     */
-    vector<string> types = {"string","int","string"};
-    vector<vector<string>> tables = {{"czt","81","Good"},{"zhg","84","Goode"}};
+    //设置数据路径
+    string data_src = "/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/src/data/data.csv";
+
+    //读入表并生成 mm 和 emm
+    DataMapper data_mapper(parms);
+    vector<string> types = {"string","int","int","int"};
+    //vector<vector<string>> tables = {{"张三","84","90","87"},{"李四","82","91","87"}};
+    cout << "从数据源中读入数据:"<< data_src << endl;
+    vector<vector<string>> tables = data_mapper.fileReader(data_src);
     RowMultiMap mm = data_mapper.rowMultiMapConstruct(0,tables,types);
-    //
     map<string,string> index_to_keys;
+
     EncryptManager encrypt_manager = EncryptManager();
     EncryptedMultiMap emm = encrypt_manager.setup(mm,index_to_keys);
-    //
-    string key = index_to_keys["0,0,1"];
+
+    Evaluator evaluator(data_mapper.context);
+
+    // 预备查询 key
+    cout << "准备查询 张三 的成绩之和" << endl;
+    string query_key = "张三";
+
+    //准备执行插入
     vector<string> keys = emm.getKeys();
     string conninfo = PGSQL_CONNINFO;
     PGconn *conn = PQconnectdb(conninfo.c_str());
     //检查连接状态
     if (PQstatus(conn) != CONNECTION_OK) {
-        std::cerr << "Connection to database failed: " << PQerrorMessage(conn) << std::endl;
-        exit_nicely(conn);
+        std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
+        PQfinish(conn);
+        return;
+    } else {
+        std::cout << "已成功连接到数据库！\n";
     }
+
+    int couter = 0 ;
     for(auto key : keys) {
         testInsert(pair<string,string>(key,emm.get(key)),conn);
+        couter++;
     }
-    string viewKey = index_to_keys["0,0,1"];
-    string cipherData = testQuery1(index_to_keys["0,0,1"],conn);
-    int view = data_mapper.decryptData(cipherData);
-    cout << view << endl;
+    cout << format("数据插入成功: {}",couter) << endl;
+    vector<string> query_keys = keysToEncrptedKeys(getKeysFromRows(query_key,0,tables),index_to_keys);
 
-    //关闭连接
+    // 调用服务器的加密函数并返回结果
+
+    Ciphertext ct3;
+    stringstream ss;
+    string::size_type len3;
+    unsigned char * res_3 = testQuery2(query_keys,conn,len3);
+    string res_s3 = {reinterpret_cast<const char*>(res_3), len3};
+    ss << res_s3;
+    ct3.load(data_mapper.context,ss);
+
+
+    int f_res = data_mapper.decryptData(ss.str());
+    cout << "获得查询结果：" <<f_res << endl;
     PQfinish(conn);
 }
 
-int main() {
-   testFull();
 
+
+int main() {
+    testAddEx();
+    //testFull();
     //testSeal();
     //testPaillier();
 	//testPythonScript();

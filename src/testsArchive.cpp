@@ -288,3 +288,188 @@ void testQuery() {
 //    // 关闭连接
 //    PQfinish(conn);
 //}
+void testSeal() {
+    stringstream ss;
+
+    EncryptionParameters parms(scheme_type::bfv);
+
+    // 设置多项式的模数（多项式环的大小），必须为2的幂次方
+    size_t poly_modulus_degree = 4096;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+
+    // 设置系数模数
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+
+    // 设置纯文本模数（加密运算的模数）
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+
+    // 创建SEALContext对象
+    SEALContext context(parms);
+
+    // 生成密钥
+    KeyGenerator keygen(context);
+    SecretKey secret_key = keygen.secret_key();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
+
+    // 创建加密器、解密器和编码器
+    Encryptor encryptor(context, public_key);
+    Decryptor decryptor(context, secret_key);
+    Evaluator evaluator(context);
+
+    // 要加密的整数
+    int value1 = 42;
+    int value2 = 32;
+    Plaintext x_plain1(uint64_to_hex_string(value1));
+    Plaintext x_plain2(uint64_to_hex_string(value2));
+
+    // 加密
+    Ciphertext encrypted_v1,encrypted_v2;
+    encryptor.encrypt(x_plain1, encrypted_v1);
+    encryptor.encrypt(x_plain2, encrypted_v2);
+    //cout << "Encrypted message size: " << encrypted.size() << endl;
+
+
+    //相加
+    Ciphertext encrypted_v3;
+    evaluator.add(encrypted_v1,encrypted_v2,encrypted_v3);
+    encrypted_v3.save(ss);
+
+    string viewSS = ss.str();
+    cout << "CipherText's size is " <<viewSS.size() << endl;
+    // 解密
+    Plaintext decrypted_plaintext;
+    decryptor.decrypt(encrypted_v3,decrypted_plaintext);
+    int res = hexStringToInt(decrypted_plaintext.to_string());
+    // 解码
+    cout << "Decrypted value:" << res << '\n' <<endl;
+
+
+}
+/*
+string testQuery1(string key,PGconn *conn) {
+
+    if (PQstatus(conn) != CONNECTION_OK) {
+        std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
+        PQfinish(conn);
+        return nullptr;
+    } else {
+        std::cout << "已成功连接到数据库！\n";
+    }
+
+    // 执行查询
+    const char *query = R"(SELECT _value FROM kvtest WHERE "key_bytea" = $1;)";
+    const char *paramValues[1];
+    int paramLengths[1];
+    int paramFormats[1];
+
+    // 将参数转换为字符串（文本格式）
+    char* key_char =new char[key.size()+1];
+    stringToChar(key,key_char);
+    paramValues[0] = key_char;
+    paramLengths[0] = 0;// 对于文本格式参数，长度可以为 0
+    paramFormats[0] = 0; // 0 表示文本格式
+
+    // 执行参数化查询
+    //PGresult *res = PQexec(conn, query);
+    PGresult *res = PQexecParams(conn,
+                               query,
+                               1,           // 参数个数
+                               nullptr,        // 参数类型 OIDs，NULL 表示让服务器自行推断
+                                 paramValues, // 参数值
+                                 paramLengths, // 参数长度
+                                 paramFormats, // 参数格式
+                                 0);
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        std::cerr << "执行查询失败: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res);
+        PQfinish(conn);
+        return nullptr;
+    }
+
+
+    string::size_type len;
+    unsigned char *data = PQunescapeBytea((unsigned char*)PQgetvalue(res, 0, 0), (size_t*)&len);
+
+    //string data_str = UcharToString(data,len);
+    if (data == NULL) {
+        cerr << "未找到数据" << endl;
+        delete[] data;
+
+        PQclear(res);
+
+        return nullptr;
+    }
+    return  {reinterpret_cast<const char*>(data), len};
+    // 输出数据
+
+
+
+    // 如果需要将 bytea 数据保存为文件
+
+    std::ofstream outfile("output.bin", std::ios::binary);
+    outfile.write(reinterpret_cast<const char*>(data), len);
+    outfile.close();
+
+    delete[] data;
+    delete[] key_char;
+    // 释放解码后的数据
+    PQfreemem(data);
+
+    // 清理资源
+    PQclear(res);
+
+
+}
+*/
+/*
+*void testFull() {
+    cout << "测试 EMM 的生成以及在数据库上的插入和查询" << endl;
+    EncryptionParameters parms(scheme_type::bfv);
+
+    // 设置多项式的模数（多项式环的大小），必须为2的幂次方
+    size_t poly_modulus_degree = 2048;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+
+    // 设置系数模数
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+
+    // 设置纯文本模数（加密运算的模数）
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+
+//testAES();
+DataMapper data_mapper(parms);
+
+
+vector<string> types = {"string","int","string"};
+vector<vector<string>> tables = {{"czt","81","Good"},{"zhg","84","Goode"}};
+RowMultiMap mm = data_mapper.rowMultiMapConstruct(0,tables,types);
+//
+map<string,string> index_to_keys;
+EncryptManager encrypt_manager = EncryptManager();
+EncryptedMultiMap emm = encrypt_manager.setup(mm,index_to_keys);
+//
+string key = index_to_keys["0,0,1"];
+vector<string> keys = emm.getKeys();
+string conninfo = PGSQL_CONNINFO;
+PGconn *conn = PQconnectdb(conninfo.c_str());
+//检查连接状态
+if (PQstatus(conn) != CONNECTION_OK) {
+    std::cerr << "Connection to database failed: " << PQerrorMessage(conn) << std::endl;
+    exit_nicely(conn);
+}
+for(auto key : keys) {
+    testInsert(pair<string,string>(key,emm.get(key)),conn);
+}
+cout << "选择 0 行 1 列的的数据进行测试" << endl;
+string viewKey = index_to_keys["0,0,1"];
+string cipherData = testQuery1(index_to_keys["0,0,1"],conn);
+cout << "该数据(81)对应的密文是" << cipherData << endl;
+int view = data_mapper.decryptData(cipherData);
+cout << "对应的明文是" <<view << endl;
+
+//关闭连接
+PQfinish(conn);
+}
+*/
