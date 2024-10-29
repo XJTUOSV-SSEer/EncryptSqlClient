@@ -42,7 +42,7 @@ string testQuery1(string key,PGconn *conn) {
     }
 
     // 执行查询
-    const char *query = R"(SELECT _value FROM kvtest WHERE "_key" = $1;)";
+    const char *query = R"(SELECT enc_value FROM kvtest WHERE "enc_key" = $1;)";
     const char *paramValues[1];
     int paramLengths[1];
     int paramFormats[1];
@@ -111,7 +111,7 @@ unsigned char* testQuery2(vector<string> keys,PGconn *conn,string::size_type &le
 
 
     // 执行查询
-    const char *query = R"(select SUM_ex(_value) from kvtest where _key in ($1,$2,$3);)";
+    const char *query = R"(select SUM_ex(enc_value) from kvtest where enc_key in ($1,$2,$3);)";
     cout << "执行 sql 语句: " << query << endl;
     const char *paramValues[3];
     int paramLengths[3]={0,0,0};
@@ -235,8 +235,8 @@ void testInsert(const pair<string,string>& kv,PGconn *conn) {
     //int paramLengths_2[1] = {0};
     //int paramFormats_2[1] = {0};
 
-    const char *sql = "INSERT INTO kvtest (_key,_value) VALUES ($1,$2) ON CONFLICT(_key)"
-                      "DO UPDATE SET _value = $2 ";
+    const char *sql = "INSERT INTO kvtest (enc_key,enc_value) VALUES ($1,$2) ON CONFLICT(enc_key)"
+                      "DO UPDATE SET enc_value = $2 ";
     const char *sql2 = "update kvtest set value_bytea = $1 where _key = $2";
 
     PGresult *res = PQexecParams(conn,
@@ -310,7 +310,8 @@ void testAddEx() {
 
     //准备执行插入
     vector<string> keys = emm.getKeys();
-    string conninfo = PGSQL_CONNINFO;
+    //string conninfo = PGSQL_CONNINFO;
+    string conninfo = PGSQL_CONNINFO_remote;
     PGconn *conn = PQconnectdb(conninfo.c_str());
     //检查连接状态
     if (PQstatus(conn) != CONNECTION_OK) {
@@ -329,7 +330,7 @@ void testAddEx() {
     cout << format("数据插入成功: {}",couter) << endl;
     vector<string> query_keys = keysToEncrptedKeys(getKeysFromRows(query_key,0,tables),index_to_keys);
 
-    // 调用服务器的加密函数并返回结果
+    // 调用服务器的加法函数并返回结果
 
     Ciphertext ct3;
     stringstream ss;

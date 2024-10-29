@@ -17,6 +17,7 @@ inline const string DATA_IV_1 = "XJTU_ESC_10s2YIx";
 inline const string DATA_KEY_2 = "XJTU_ESC_2fRFsbJQMHVU5gLWEULNtXF";
 inline const string DATA_IV_2 = "XJTU_ESC_nS0x9ep";
 inline const string PGSQL_CONNINFO = "dbname=test user=chenzhiting password=123456 hostaddr=127.0.0.1 port=5432";
+inline const string PGSQL_CONNINFO_remote = "dbname=test user=czt password=123456 hostaddr=10.181.7.139 port=5432";
 
 inline std::string uint64_to_hex_string(std::uint64_t value)
 {
