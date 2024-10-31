@@ -473,3 +473,72 @@ cout << "对应的明文是" <<view << endl;
 PQfinish(conn);
 }
 */
+/*
+void testAddEx() {
+    EncryptionParameters parms(scheme_type::bfv);
+
+    // 设置 SEAL 参数
+    size_t poly_modulus_degree = 2048;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+
+    //设置数据路径
+    string data_src = "/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/src/data/data.csv";
+
+    //读入表并生成 mm 和 emm
+    DataMapper data_mapper(parms);
+    vector<string> types = {"string","int","int","int"};
+    //vector<vector<string>> tables = {{"张三","84","90","87"},{"李四","82","91","87"}};
+    cout << "从数据源中读入数据:"<< data_src << endl;
+    vector<vector<string>> tables = data_mapper.fileReader(data_src);
+    RowMultiMap mm = data_mapper.rowMultiMapConstruct(0,tables,types);
+    map<string,string> index_to_keys;
+
+    EncryptManager encrypt_manager = EncryptManager();
+    EncryptedMultiMap emm = encrypt_manager.setup(mm,index_to_keys);
+
+    Evaluator evaluator(data_mapper.context);
+
+    // 预备查询 key
+    cout << "准备查询 张三 的成绩之和" << endl;
+    string query_key = "张三";
+
+    //准备执行插入
+    vector<string> keys = emm.getKeys();
+    //string conninfo = PGSQL_CONNINFO;
+    string conninfo = PGSQL_CONNINFO_remote;
+    PGconn *conn = PQconnectdb(conninfo.c_str());
+    //检查连接状态
+    if (PQstatus(conn) != CONNECTION_OK) {
+        std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
+        PQfinish(conn);
+        return;
+    } else {
+        std::cout << "已成功连接到数据库！\n";
+    }
+
+    int couter = 0 ;
+    for(auto key : keys) {
+        testInsert(pair<string,string>(key,emm.get(key)),conn);
+        couter++;
+    }
+    cout << format("数据插入成功: {}",couter) << endl;
+    vector<string> query_keys = keysToEncrptedKeys(getKeysFromRows(query_key,0,tables),index_to_keys);
+
+    // 调用服务器的加法函数并返回结果
+
+    Ciphertext ct3;
+    stringstream ss;
+    string::size_type len3;
+    unsigned char * res_3 = testQuery2(query_keys,conn,len3);
+    string res_s3 = {reinterpret_cast<const char*>(res_3), len3};
+    ss << res_s3;
+    ct3.load(data_mapper.context,ss);
+
+
+    int f_res = data_mapper.decryptData(ss.str());
+    cout << "获得查询结果：" <<f_res << endl;
+    PQfinish(conn);
+}
+*/

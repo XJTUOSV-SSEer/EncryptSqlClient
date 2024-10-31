@@ -2,10 +2,13 @@
 // Created by 陈志庭 on 24-9-21.
 //
 #include "EncryptUtil.h"
+#include "../main.h"
 
 #include <iomanip>
 #include <random>
 #include <sstream>
+
+#include "Crypto_Primitives.h"
 
 
 string KeyGeneratorForCP(int length) {
@@ -131,7 +134,7 @@ std::string unsignedCharArrayToHexString(const unsigned char* data, size_t lengt
     return oss.str(); // 返回十六进制字符串
 }
 
-std::vector<unsigned char> hexStringToUnsignedCharArray(const std::string& hexString) {
+std::vector<unsigned char> hexStringToUnsignedCharArray(const std::string &hexString) {
     std::vector<unsigned char> byteArray;
     size_t length = hexString.length();
 
@@ -147,4 +150,39 @@ std::vector<unsigned char> hexStringToUnsignedCharArray(const std::string& hexSt
 
 
     return byteArray;
+}
+
+string getSymmetricEncryption(const string& text, bool return_hex ){
+    string key = DATA_KEY_1;
+    string iv = DATA_IV_1;
+
+    int padLength = text.size();
+    if(text.size() % 16 != 0) {
+        padLength = text.size()-text.size() % 16 +16;
+    }
+
+
+    auto* plain_text = new unsigned char[padLength];
+    auto* ciphertext = new unsigned char[padLength + 16];
+    auto* key_uc = new unsigned char[key.size()];
+    auto* iv_uc = new unsigned char[iv.size()];
+
+    StringToUchar(key,key_uc);
+    StringToUchar(iv,iv_uc);
+    //StringToUchar(text,plain_text);
+
+    padding16(text,plain_text);
+    int cipertext_len = Crypto_Primitives::sym_encrypt(plain_text,padLength,key_uc,iv_uc,ciphertext);
+    //string cipherStr = UcharToString(ciphertext,cipertext_len);
+    string cipher_hex = unsignedCharArrayToHexString(ciphertext,cipertext_len);
+    string cipherStr = string(reinterpret_cast<const char*>(ciphertext), cipertext_len);
+
+
+    delete[] plain_text;
+    delete[] key_uc;
+    delete[] iv_uc;
+    if(return_hex) {
+        return cipher_hex;
+    }
+    return cipherStr;
 }

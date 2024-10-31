@@ -46,10 +46,16 @@ int hexStringToInt(const std::string& hexStr);
  * @param length unsigned char数组的长度
  * @return
  */
-string unsignedCharArrayToHexString(const unsigned char* data, size_t length);
+string unsignedCharArrayToHexString(const unsigned char *data, size_t length);
 /**
  * 将十六进制字符串转换为 unsigned char 数组
  * @param hexString
  * @return
  */
 vector<unsigned char> hexStringToUnsignedCharArray(const std::string& hexString);
+/**
+ * 对字符串进行对称加密
+ * @param text 待加密字符串
+ * @return 加密后字符串长度
+ */
+string getSymmetricEncryption(const string& text, bool return_hex = false);

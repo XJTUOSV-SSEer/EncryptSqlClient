@@ -107,31 +107,40 @@ string testQuery1(string key,PGconn *conn) {
 
 }
 
-unsigned char* testQuery2(vector<string> keys,PGconn *conn,string::size_type &len) {
+//unsigned char* testQuery2(vector<string> keys,PGconn *conn,string::size_type &len) {
+unsigned char* testQuery2(string key,PGconn *conn,string::size_type &len) {
 
 
     // 执行查询
-    const char *query = R"(select SUM_ex(enc_value) from kvtest where enc_key in ($1,$2,$3);)";
+    //const char *query = R"(select SUM_ex(enc_value) from kvtest where enc_key in ($1,$2,$3);)";
+    const char *query = R"(select sum_by_row($1);)";
+
     cout << "执行 sql 语句: " << query << endl;
-    const char *paramValues[3];
-    int paramLengths[3]={0,0,0};
-    int paramFormats[3]={0,0,0};// 0 表示文本格式
+    const char *paramValues[1];
+    int paramLengths[2]={0};
+    int paramFormats[2]={0};// 0 表示文本格式
 
     // 将参数转换为字符串（文本格式）
-    for(int i=0;i<3;i++) {
-        const string& key = keys[i];
-        char* key_char =new char[key.size()+1];
-        stringToChar(key,key_char);
-        paramValues[i] = key_char;
-    }
+    //for(int i=0;i<3;i++) {
+    //    const string& key = keys[i];
+    //    char* key_char =new char[key.size()+1];
+    //    stringToChar(key,key_char);
+    //    paramValues[i] = key_char;
+    //}
+    stringstream ss;
 
+    char* key_char =new char[key.size()+1];
+
+    stringToChar(key,key_char);
+    key_char[key.size()]=0;
+    paramValues[0] = key_char;
 
 
     // 执行参数化查询
     //PGresult *res = PQexec(conn, query);
     PGresult *res = PQexecParams(conn,
                                query,
-                               3,           // 参数个数
+                               1,           // 参数个数
                                nullptr,        // 参数类型 OIDs，NULL 表示让服务器自行推断
                                  paramValues, // 参数值
                                  paramLengths, // 参数长度
@@ -222,8 +231,8 @@ void testInsert(const pair<string,string>& kv,PGconn *conn) {
     int val_len = val.size();
 
     char *key_copy = new char[key_len+1];
-    char *val_copy = new char[val_len+1];
-
+    char *val_copy = new char[val_len];
+    key_copy[key_len] = '\0';
     stringToChar(key,key_copy);
     stringToChar(val,val_copy);
 
@@ -278,7 +287,8 @@ vector<string> keysToEncrptedKeys(vector<string> keys,map<string,string> index_t
     return keys_to_encrpted_keys;
 }
 
-void testAddEx() {
+
+void testSumByRow(PGconn *conn) {
     EncryptionParameters parms(scheme_type::bfv);
 
     // 设置 SEAL 参数
@@ -296,23 +306,22 @@ void testAddEx() {
     //vector<vector<string>> tables = {{"张三","84","90","87"},{"李四","82","91","87"}};
     cout << "从数据源中读入数据:"<< data_src << endl;
     vector<vector<string>> tables = data_mapper.fileReader(data_src);
-    RowMultiMap mm = data_mapper.rowMultiMapConstruct(0,tables,types);
+    //建立 mm，默认表号为 0
+    RowMultiMap mm = data_mapper.colMultiMapConstruct(0,tables,types);
     map<string,string> index_to_keys;
 
     EncryptManager encrypt_manager = EncryptManager();
-    EncryptedMultiMap emm = encrypt_manager.setup(mm,index_to_keys);
+    EncryptedMultiMap emm = encrypt_manager.setupPerRow(mm);
 
     Evaluator evaluator(data_mapper.context);
 
     // 预备查询 key
-    cout << "准备查询 张三 的成绩之和" << endl;
-    string query_key = "张三";
+    cout << "准备查询 第二列 的成绩之和" << endl;
 
     //准备执行插入
     vector<string> keys = emm.getKeys();
     //string conninfo = PGSQL_CONNINFO;
-    string conninfo = PGSQL_CONNINFO_remote;
-    PGconn *conn = PQconnectdb(conninfo.c_str());
+
     //检查连接状态
     if (PQstatus(conn) != CONNECTION_OK) {
         std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
@@ -328,14 +337,14 @@ void testAddEx() {
         couter++;
     }
     cout << format("数据插入成功: {}",couter) << endl;
-    vector<string> query_keys = keysToEncrptedKeys(getKeysFromRows(query_key,0,tables),index_to_keys);
-
+    //vector<string> query_keys = keysToEncrptedKeys(getKeysFromRows(query_key,0,tables),index_to_keys);
+    string query_key = prfFunctionReturnString("0,1",true);
     // 调用服务器的加法函数并返回结果
 
     Ciphertext ct3;
     stringstream ss;
     string::size_type len3;
-    unsigned char * res_3 = testQuery2(query_keys,conn,len3);
+    unsigned char * res_3 = testQuery2(query_key,conn,len3);
     string res_s3 = {reinterpret_cast<const char*>(res_3), len3};
     ss << res_s3;
     ct3.load(data_mapper.context,ss);
@@ -347,9 +356,10 @@ void testAddEx() {
 }
 
 
-
 int main() {
-    testAddEx();
+    string conninfo = PGSQL_CONNINFO;
+    PGconn *conn = PQconnectdb(conninfo.c_str());
+    testSumByRow(conn);
     //testFull();
     //testSeal();
     //testPaillier();

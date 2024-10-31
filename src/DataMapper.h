@@ -34,7 +34,8 @@ public:
      * @param columnsTypes 每列的属性
      * @return
      */
-    RowMultiMap rowMultiMapConstruct(int tableID, vector<vector<string>> inData,vector<string> columnsTypes);
+    RowMultiMap rowMultiMapConstruct(int tableID, vector<vector<string>> inData, vector<string> columnsTypes);
+    RowMultiMap colMultiMapConstruct(int tableID, vector<vector<string>>inData, vector<string>columnsTypes);
     int decryptData(string cipertext);
     static vector<vector<string>> rowMapperDecrypt(RowMultiMap rmm);
 
@@ -63,15 +64,15 @@ public:
 
         /**
          * 对数据进行对称加密，并加入到 MM 中。key 来源于 main.h 中。
-         * @param row 待加入的行向量
-         * @param row_text_len 待加入的行向量长度
+         * @param row 待加入的行/列向量
+         * @param row_text_len 待加入的行/列数据密文长度向量，主要用于对称加密的解密。
          * @param text 文本数据
          */
         void insertIntoRowBySymmetricEncryption(vector<string> &row, vector<int> &row_text_len, const string& text);
         /**
          * 对数据进行同态加密，并加入到 MM 中。key 需要使用 seal::KeyGenerator 生成，并先传入到 rowMultiMapConstruct 中
-         * @param row 待加入的行向量
-         * @param row_text_len 待加入的行向量长度
+         * @param row 待加入的行/列向量
+         * @param row_text_len 待加入的行/列数据密文长度向量，主要用于对称加密的解密。
          * @param value 文本数据
          */
         void insertIntoRowByHomomorphicEncryption(vector<string> &row, vector<int>&row_text_len,int value);

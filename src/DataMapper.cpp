@@ -50,6 +50,7 @@ int DataMapper::decryptData(string ciphertext){
 }
 
 
+
 void DataMapper::insertIntoRowBySymmetricEncryption(vector<string> &row, vector<int> &row_text_len,const string& text){
     string MMType = "row";
     string key =DATA_KEY_1;
@@ -108,8 +109,10 @@ RowMultiMap DataMapper::rowMultiMapConstruct(int tableID, vector<vector<string> 
 	int row_index = 0, col_index = 0;
 	for(;row_index < row_size; row_index++) {
 		pair index(tableID,row_index);
+	    // 分别用于标识每行数据和对应长度的向量
+	    vector<string> row;
 		vector<int> row_text_len;
-		vector<string> row;
+
 		for(col_index = 0; col_index < col_size; col_index++) {
 			string text = inData[row_index][col_index];
 		    string type = mmap.getTypesByColumnsID(col_index);
@@ -125,6 +128,36 @@ RowMultiMap DataMapper::rowMultiMapConstruct(int tableID, vector<vector<string> 
 		mmap.add(index,row,row_text_len);
 	}
 	return mmap;
+}
+
+RowMultiMap DataMapper::colMultiMapConstruct(int tableID, vector<vector<string> > inData,vector<string> columnsTypes) {
+    RowMultiMap mmap;
+    mmap.setColumnsTypes(columnsTypes);
+    const int row_size = inData.size();
+    const int col_size = inData[0].size();
+
+    int row_index = 0, col_index = 0;
+    for(;col_index < col_size; col_index++) {
+        pair index(tableID,col_index);
+        // 分别用于标识每列数据和对应长度的向量
+        vector<string> col;
+        vector<int> col_text_len;
+
+        for(row_index = 0; row_index < row_size; row_index++) {
+            string text = inData[row_index][col_index];
+            string type = mmap.getTypesByColumnsID(col_index);
+
+            if(type == "string") {
+                insertIntoRowBySymmetricEncryption(col, col_text_len, text);
+
+            } else if(type == "int") {
+                insertIntoRowByHomomorphicEncryption(col, col_text_len, stoi(text));
+            }
+
+        }
+        mmap.add(index,col,col_text_len);
+    }
+    return mmap;
 }
 vector<vector<string>> DataMapper::rowMapperDecrypt(RowMultiMap rmm) {
 	string enc_key =DATA_KEY_1;
