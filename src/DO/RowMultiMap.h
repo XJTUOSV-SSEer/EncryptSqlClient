@@ -87,14 +87,14 @@ public:
     /**
      * 重载了输出操作符
      */
-    friend ostream &operator<<( ostream &output,const RowMultiMap &RM) {
-        for(const auto& key:RM.keys) {
-            for(vector<string> row = RM.maps.at(key); const auto& value:row) {
-        output << value << endl;
-        }
-    }
-    return output;
-    }
+    //friend ostream &operator<<( ostream &output,const RowMultiMap &RM) {
+    //    for(const auto& key:RM.keys) {
+    //        for(vector<string> row = RM.maps.at(key); const auto& value:row) {
+    //            output << value << endl;
+    //    }
+    //}
+    //return output;
+    //}
 
 };
 #endif //MULTIMAP_H
