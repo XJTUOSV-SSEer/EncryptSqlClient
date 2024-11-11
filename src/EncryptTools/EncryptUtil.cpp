@@ -186,3 +186,14 @@ string getSymmetricEncryption(const string& text, bool return_hex ){
     }
     return cipherStr;
 }
+string encodeHexString(const std::string& str) {
+    // 根据默认编码获取字节数组
+    const std::string hexString = "0123456789abcdef";
+    string sb;
+    // 将字节数组中每个字节拆解成2位16进制整数
+    for (int i = 0; i < str.length(); i++) {
+        sb += hexString.at((str[i] & 0xf0) >> 4);
+        sb += hexString.at((str[i] & 0x0f) >> 0);
+    }
+    return sb;
+}

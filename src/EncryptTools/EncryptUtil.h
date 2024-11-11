@@ -59,3 +59,5 @@ vector<unsigned char> hexStringToUnsignedCharArray(const std::string& hexString)
  * @return 加密后字符串长度
  */
 string getSymmetricEncryption(const string& text, bool return_hex = false);
+
+string encodeHexString(const std::string& str);

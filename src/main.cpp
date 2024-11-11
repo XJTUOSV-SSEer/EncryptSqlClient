@@ -357,7 +357,7 @@ void testSumByRow(PGconn *conn) {
 
 
 int main() {
-    string conninfo = PGSQL_CONNINFO;
+    string conninfo = PGSQL_CONNINFO_remote;
     PGconn *conn = PQconnectdb(conninfo.c_str());
     testSumByRow(conn);
     //testFull();
