@@ -5,7 +5,6 @@
 #ifndef ENCRYPTEDMULTIMAP_H
 #define ENCRYPTEDMULTIMAP_H
 #include <map>
-#include <pybind11/pytypes.h>
 #include <string>
 
 #include "RowMultiMap.h"

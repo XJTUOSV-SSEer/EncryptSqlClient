@@ -10,6 +10,7 @@
 #endif //ENCRYPTUTIL_H
 
 #include<iostream>
+#include <vector>
 using namespace std;
 
 /**

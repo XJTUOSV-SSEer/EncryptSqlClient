@@ -1,12 +1,13 @@
 #include "Crypto_Primitives.h"
-#include <openssl/conf.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
-#include <openssl/rand.h>
-#include <iostream>
 #include <cstring>
+#include <iostream>
+#include <memory>
+#include <openssl/conf.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 
-//int Crypto_Primitives::sym_encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+// int Crypto_Primitives::sym_encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
 //                                   unsigned char *iv, unsigned char *ciphertext)
 //{
 //    EVP_CIPHER_CTX *ctx;

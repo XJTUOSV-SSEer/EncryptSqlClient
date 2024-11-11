@@ -18,8 +18,6 @@
 #include<gmpxx.h>
 #include<gmp.h>
 
-#include <pybind11/embed.h> // 用于嵌入 Python 解释器
-namespace py = pybind11;
 using namespace std;
 using namespace seal;
 
@@ -266,13 +264,16 @@ void testInsert(const pair<string,string>& kv,PGconn *conn) {
 
 vector<string> getKeysFromRows(string key,int key_column_no,vector<vector<string>> tables) {
     vector<string> keys;
+    stringstream ss;
     int size_row = tables.size();
     int size_col = tables[0].size();
     for(int i=0;i<size_row;i++) {
         if(key == tables[i][key_column_no]) {
             for(int j=0;j<size_col;j++) {
                 if(j==key_column_no)continue;
-                keys.push_back(format("0,{},{}",i,j));
+                ss << "0," << i << "," << j;
+                keys.push_back(ss.str());
+                ss.str("");
             }
         }
     }
@@ -336,7 +337,7 @@ void testSumByRow(PGconn *conn) {
         testInsert(pair<string,string>(key,emm.get(key)),conn);
         couter++;
     }
-    cout << format("数据插入成功: {}",couter) << endl;
+    cout << "数据插入成功:" << couter << endl;
     //vector<string> query_keys = keysToEncrptedKeys(getKeysFromRows(query_key,0,tables),index_to_keys);
     string query_key = prfFunctionReturnString("0,1",true);
     // 调用服务器的加法函数并返回结果
