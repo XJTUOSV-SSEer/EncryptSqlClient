@@ -1,0 +1,5 @@
+# my_extension 控制文件
+comment = 'My first C++ PostgreSQL extension'
+default_version = '1.0'
+relocatable = true
+module_pathname = '$libdir/calc_cpp_demo'
