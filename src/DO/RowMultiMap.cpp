@@ -14,9 +14,17 @@ RowMultiMap::RowMultiMap() {
 
 
 void RowMultiMap::add(const string& index, vector<string>& inputData,vector<int> cipertextLength) {
-    keys.insert(index);
-    maps[index] = inputData;
-    ciperTextLenMap[index] = std::move(cipertextLength);
+    if(keys.count(index)){
+        for(int i=0;i<inputData.size();i++){
+            maps[index].push_back(inputData[i]);
+            ciperTextLenMap[index].push_back(cipertextLength[i]);
+        }
+    }
+    else {
+        keys.insert(index);
+        maps[index] = inputData;
+        ciperTextLenMap[index] = std::move(cipertextLength);
+    }
 }
 
 void RowMultiMap::add(pair<int,int> p_index, vector<string> inputData,vector<int> cipertextLength) {

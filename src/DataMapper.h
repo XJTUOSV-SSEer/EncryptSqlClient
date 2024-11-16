@@ -36,6 +36,10 @@ public:
      */
     RowMultiMap rowMultiMapConstruct(int tableID, vector<vector<string>> inData, vector<string> columnsTypes);
     RowMultiMap colMultiMapConstruct(int tableID, vector<vector<string>>inData, vector<string>columnsTypes);
+
+    RowMultiMap valueMultiMapConstruct(int tableID, vector<vector<string>>inData, vector<string>columnsTypes);
+    RowMultiMap joinMultiMapConstruct(int tableID1, int tableID2, vector<vector<string>> table1,
+                                                  vector<vector<string>> table2,int joinCol1,int joinCol2, vector<string> columnsTypes) ;
     int decryptData(string cipertext);
     static vector<vector<string>> rowMapperDecrypt(RowMultiMap rmm);
 

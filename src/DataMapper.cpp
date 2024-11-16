@@ -159,6 +159,73 @@ RowMultiMap DataMapper::colMultiMapConstruct(int tableID, vector<vector<string> 
     }
     return mmap;
 }
+RowMultiMap DataMapper::valueMultiMapConstruct(int tableID, vector<vector<string>> inData,
+                                               vector<string> columnsTypes) {
+    RowMultiMap mmap;
+    stringstream ss;
+    mmap.setColumnsTypes(columnsTypes);
+    const int row_size = inData.size();
+    const int col_size = inData[0].size();
+
+    int row_index = 0, col_index = 0;
+    for(;col_index < col_size; col_index++) {
+
+
+
+        for(row_index = 0; row_index < row_size; row_index++) {
+            // 分别用于标识每列数据和对应长度的向量
+            vector<string> row;
+            vector<int> row_text_len;
+            string text = inData[row_index][col_index];
+
+            ss << tableID << "," << col_index << "," << text;
+            string index  = ss.str();
+            ss.str("");
+
+            ss << tableID << "," << row_index;
+            string valuePlainText = ss.str();
+            ss.str("");
+
+            insertIntoRowBySymmetricEncryption(row,row_text_len,text);
+
+            mmap.add(index,row,row_text_len);
+        }
+
+    }
+    return mmap;
+}
+RowMultiMap DataMapper::joinMultiMapConstruct(int tableID1, int tableID2, vector<vector<string>> table1,
+                                              vector<vector<string>> table2,int joinCol1,int joinCol2, vector<string> columnsTypes) {
+    stringstream ss;
+    RowMultiMap mmap;
+    int row_size1 = table1.size();
+    int row_size2 = table2.size();
+    for(int r1 = 0;r1<row_size1;r1++){
+        for(int r2=0;r2<row_size2;r2++){
+            string text1 = table1[r1][joinCol1];
+            string text2 = table1[r2][joinCol2];
+
+            if(text1 == text2){
+                vector<string> row;
+                vector<int> row_text_len;
+
+                ss << tableID1 << "," << r1;
+                string index = ss.str();
+                ss.str("");
+
+                ss << tableID2 << "," << r2;
+                string value = ss.str();
+                ss.str("");
+
+                insertIntoRowBySymmetricEncryption(row,row_text_len,value);
+
+                mmap.add(index,row,row_text_len);
+            }
+        }
+    }
+
+    return RowMultiMap();
+}
 vector<vector<string>> DataMapper::rowMapperDecrypt(RowMultiMap rmm) {
 	string enc_key =DATA_KEY_1;
 	string enc_iv =DATA_IV_1;
@@ -217,3 +284,4 @@ vector<vector<string>> DataMapper::fileReader(const string& fileName) {
     return strArray;
                         
 }
+
