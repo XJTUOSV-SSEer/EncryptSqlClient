@@ -7,8 +7,8 @@
 #include "string"
 #include "vector"
 using namespace std;
-string generateSigmaQuery(string targetTable, vector<string> texts,bool return_key = true);
-string generateJoinToken(string targetTable, vector<string> texts,bool return_key = true);
-string generatePiToken(string targetTable, vector<string> texts,bool return_key = true);
+string generateSigmaQueryArc(string targetTable, vector<string> texts,bool return_key = true);
+string generateSigmaQuery(string fromTable, string tmpTable ,string whereParams);
+string generateSigmaQueryFromTmpTable(string fromTable, string tmpTable);
 #
 #endif // ENCRYPTSQLCLIENT_TOKENGENERATOR_H

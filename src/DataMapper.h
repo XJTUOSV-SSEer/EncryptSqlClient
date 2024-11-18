@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <libpq-fe.h>
 #include <map>
 #include <seal/decryptor.h>
 #include <seal/encryptor.h>
@@ -16,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "DO/EncryptedMultiMap.h"
 #include "DO/RowMultiMap.h"
 using namespace std;
 using namespace seal;
@@ -24,6 +26,7 @@ using namespace seal;
  * 用于判断并生成对应 MM 数据结构的工具类，待完成
  */
 class DataMapper {
+    void insert(const pair<string,string>& kv,PGconn *conn);
 public:
     DataMapper(EncryptionParameters&parms);
     PublicKey initializePublicKey();
@@ -37,9 +40,11 @@ public:
     RowMultiMap rowMultiMapConstruct(int tableID, vector<vector<string>> inData, vector<string> columnsTypes);
     RowMultiMap colMultiMapConstruct(int tableID, vector<vector<string>>inData, vector<string>columnsTypes);
 
-    RowMultiMap valueMultiMapConstruct(int tableID, vector<vector<string>>inData, vector<string>columnsTypes);
+    RowMultiMap valueMultiMapConstruct(int tableID, vector<vector<string>> inData, vector<string> columnsTypes);
     RowMultiMap joinMultiMapConstruct(int tableID1, int tableID2, vector<vector<string>> table1,
-                                                  vector<vector<string>> table2,int joinCol1,int joinCol2, vector<string> columnsTypes) ;
+                                      vector<vector<string>> table2, int joinCol1, int joinCol2);
+    void generateEmmIntoSql(PGconn *conn, int tableID, vector<vector<string>> Table, vector<string> columnsTypes);
+    void generateJoinEmmIntoSql(PGconn *conn, int tableID1, int tableID2, vector<vector<string>>table1, vector<vector<string>>table2, int targetCol1, int targetCol2);
     int decryptData(string cipertext);
     static vector<vector<string>> rowMapperDecrypt(RowMultiMap rmm);
 
@@ -80,6 +85,8 @@ public:
          * @param value 文本数据
          */
         void insertIntoRowByHomomorphicEncryption(vector<string> &row, vector<int>&row_text_len,int value);
+    void insertEMM(EncryptedMultiMap emm, PGconn *conn,string targetTable,bool value_is_bytea);
+    void insertIntoSql(const pair<string, string>&kv,string targetTable,PGconn *conn,bool value_is_bytea);
 };
 
 

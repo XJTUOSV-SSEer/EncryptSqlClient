@@ -21,10 +21,12 @@ class EncryptManager {
      * setup 函数，用于生成 EMM，此处密钥暂时用固定的代替。
      * @param mm
      * @param idx2key
+     * @param value_to_hex
      * @return
      */
-    EncryptedMultiMap setup(RowMultiMap mm, map<string, string> &idx2key);
-    EncryptedMultiMap setupPerRow(RowMultiMap mm);
+    EncryptedMultiMap setup(RowMultiMap mm, map<string, string> &idx2key,bool value_to_hex);
+    static EncryptedMultiMap setup(RowMultiMap mm, bool value_to_hex);
+    static EncryptedMultiMap setupPerRow(RowMultiMap mm,bool value_to_hex);
 
     /**
      * 根据索引构建 token，此处是 sigma token。

@@ -4,7 +4,7 @@
 #include "TokenGenerator.h"
 #include <sstream>
 using namespace std;
-string generateSigmaQuery(string targetTable, vector<string> texts,bool return_key){
+string generateSigmaQueryArc(string targetTable, vector<string> whereParams,bool return_key){
     stringstream ss;
 
 
@@ -13,25 +13,49 @@ string generateSigmaQuery(string targetTable, vector<string> texts,bool return_k
     string params;
 
 
-    if(return_key)select_key = "encKey";
-    else select_key = "encValue";
+    if(return_key)select_key = "enc_key";
+    else select_key = "enc_value";
 
-    if(texts.size() == 1) {
+    if(whereParams.size() == 1) {
         predicate = "=";
-        params = texts[0];
+        params = whereParams[0];
     } else {
         predicate = "in";
-        ss << "(" << texts[0];
-        for(int i=1;i<texts.size();i++){
-            ss << "," << texts[i];
+        ss << "(" << whereParams[0];
+        for(int i=1;i<whereParams.size();i++){
+            ss << "," << whereParams[i];
         }
         ss << ")";
         params = ss.str();
         ss.str("");
     }
 
-    ss << "SELECT " << select_key << " " << "FROM " << targetTable << " " << "WHERE encValue " << predicate
-       << " " << params << ";";
+    ss << "SELECT " << select_key << " "
+    << "FROM " << targetTable << " "
+    << "WHERE enc_value " << predicate<< " " << params << ";";
+
+    return ss.str();
+}
+string generateSigmaQuery(string fromTable, string tmpTable ,string whereParams){
+    stringstream ss;
+
+    ss << "INSERT "
+    << "enc_query_text(enc_value) "
+    << "INTO " << tmpTable << " "
+    << "FROM " << fromTable << " "
+    << "WHERE enc_key "  << "= " << whereParams << ";";
+
+    return ss.str();
+}
+string generateSigmaQueryFromTmpTable(string fromTable, string tmpTable){
+    stringstream ss;
+
+    string select_key = "val";
+
+    ss << "INSERT " << "enc_query_text(val)" << " "
+    << "INTO " << tmpTable << " "
+    << "FROM " << fromTable << ";";
+
 
     return ss.str();
 }

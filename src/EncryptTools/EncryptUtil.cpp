@@ -197,3 +197,48 @@ string encodeHexString(const std::string& str) {
     }
     return sb;
 }
+std::string generateRandomString(int length) {
+    const std::string characters =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    std::string randomString;
+    randomString.reserve(length);
+
+    // 使用随机数引擎
+    std::mt19937 generator(static_cast<unsigned>(std::time(nullptr))); // 随机数引擎
+    std::uniform_int_distribution<size_t> distribution(0, characters.size() - 1);
+
+    for (int i = 0; i < length; ++i) {
+        randomString += characters[distribution(generator)];
+    }
+
+    return randomString;
+}
+
+// 函数：将 std::string 转换为 std::vector<char>
+void stringToChar(string str,char* output) {
+    for(int i=0;i<str.size();i++) {
+        output[i] = str[i];
+    }
+}
+std::string binaryToHex(const std::string& binaryStr) {
+    // 确保输入的二进制字符串长度是4的倍数
+    size_t len = binaryStr.length();
+    size_t remainder = len % 4;
+    std::string paddedBinaryStr = binaryStr;
+    if (remainder != 0) {
+        // 补齐到4的倍数，在左侧添加 '0'
+        paddedBinaryStr = std::string(4 - remainder, '0') + binaryStr;
+    }
+
+    std::ostringstream hexStream;
+    for (size_t i = 0; i < paddedBinaryStr.length(); i += 4) {
+        // 每4位二进制作为一个块
+        std::string binaryChunk = paddedBinaryStr.substr(i, 4);
+        // 转换为十进制
+        int decimalValue = std::bitset<4>(binaryChunk).to_ulong();
+        // 转换为十六进制字符并添加到结果中
+        hexStream << std::hex << decimalValue;
+    }
+
+    return hexStream.str();
+}

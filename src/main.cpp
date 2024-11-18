@@ -21,12 +21,6 @@
 using namespace std;
 using namespace seal;
 
-// 函数：将 std::string 转换为 std::vector<char>
-void stringToChar(string str,char* output) {
-    for(int i=0;i<str.size();i++) {
-        output[i] = str[i];
-    }
-}
 
 
 string testQuery1(string key,PGconn *conn) {
@@ -298,21 +292,21 @@ void testSumByRow(PGconn *conn) {
     parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
 
-    //设置数据路径
+    // 设置数据路径
     string data_src = "/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/src/data/data.csv";
 
     //读入表并生成 mm 和 emm
     DataMapper data_mapper(parms);
     vector<string> types = {"string","int","int","int"};
-    //vector<vector<string>> tables = {{"张三","84","90","87"},{"李四","82","91","87"}};
-    cout << "从数据源中读入数据:"<< data_src << endl;
-    vector<vector<string>> tables = data_mapper.fileReader(data_src);
+    vector<vector<string>> tables = {{"张三","84","90","87"},{"李四","82","91","87"},{"赵六","90","80","72"}};
+    //cout << "从数据源中读入数据:"<< data_src << endl;
+    //vector<vector<string>> tables = data_mapper.fileReader(data_src);
     //建立 mm，默认表号为 0
     RowMultiMap mm = data_mapper.colMultiMapConstruct(0,tables,types);
     map<string,string> index_to_keys;
 
     EncryptManager encrypt_manager = EncryptManager();
-    EncryptedMultiMap emm = encrypt_manager.setupPerRow(mm);
+    EncryptedMultiMap emm = encrypt_manager.setupPerRow(mm,false);
 
     Evaluator evaluator(data_mapper.context);
 
@@ -358,9 +352,31 @@ void testSumByRow(PGconn *conn) {
 
 
 int main() {
-    string conninfo = PGSQL_CONNINFO_remote;
+    string conninfo = PGSQL_CONNINFO;
     PGconn *conn = PQconnectdb(conninfo.c_str());
-    testSumByRow(conn);
+
+    EncryptionParameters parms(scheme_type::bfv);
+
+    // 设置 SEAL 参数
+    size_t poly_modulus_degree = 2048;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+
+    DataMapper data_mapper(parms);
+
+    string data_src0 = "/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/src/data/table0.csv";
+    string data_src1 = "/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/src/data/table1.csv";
+
+    vector<string> types0 = {"string","string","string"};
+    vector<string> types1 = {"string","string"};
+
+    vector<vector<string>> table0 = DataMapper::fileReader(data_src0);
+    vector<vector<string>> table1 = DataMapper::fileReader(data_src1);
+
+    data_mapper.generateEmmIntoSql(conn,0,table0,types0);
+    data_mapper.generateEmmIntoSql(conn,1,table1,types1);
+    data_mapper.generateJoinEmmIntoSql(conn,0,1,table0,table1,2,0);
     //testFull();
     //testSeal();
     //testPaillier();

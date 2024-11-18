@@ -12,9 +12,11 @@ using namespace std;
  */
 class SqlPlan {
 private:
-    vector<string> sqlPlans;
+    string type;
+    vector<string> whereParams;
 public:
-    vector<string> getPlan();
+    string getType();
+    vector<string> getWhereParams();
 
 };
 

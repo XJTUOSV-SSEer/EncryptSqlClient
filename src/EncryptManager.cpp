@@ -18,44 +18,7 @@ EncryptManager:: EncryptManager(string key_1, string key_2){
     this->key_2 = key_2;
 }
 
-EncryptedMultiMap EncryptManager::setup(RowMultiMap mm,map<string,string>&idx2key) {
-    /*
-     *
-     */
-    EncryptedMultiMap encr_multi_map;
-
-
-    vector<string> keys = mm.getKeys();
-    /*
-     * 先遍历 MM 的 key，也就是数据库行的索引信息，得到每个行向量
-     */
-    for (auto ori_key : keys) {
-        vector<string> data = mm.get(ori_key);
-        /*
-        * 逐个取出行向量中的元素，对索引进行补充，生成随机数后与加密数据一并放入 EMM 中
-        */
-        for(int i = 0; i < data.size(); i++) {
-            string full_index = ori_key + ',' + to_string(i);
-            int enc_key_size = full_index.size();
-            if(enc_key_size %16!=0) {
-                enc_key_size = enc_key_size / 16 + 16;
-            }
-            unsigned char* enc_idx = new unsigned char[enc_key_size];
-            int key_len = prfFunctionReturnUnsignedChar(full_index, enc_idx);
-            string key = unsignedCharArrayToHexString(enc_idx, key_len);
-
-            encr_multi_map.insert(key,mm.get(ori_key)[i]);
-            // 做一个索引到 key 的映射，方便查找
-            idx2key.insert(pair(full_index,key));
-
-            
-        }
-
-    }
-    return encr_multi_map;
-}
-
-EncryptedMultiMap EncryptManager::setupPerRow(RowMultiMap mm) {
+EncryptedMultiMap EncryptManager::setup(RowMultiMap mm,map<string,string>&idx2key,bool value_to_hex) {
     /*
      *
      */
@@ -90,7 +53,119 @@ EncryptedMultiMap EncryptManager::setupPerRow(RowMultiMap mm) {
 
             string enc_kwi_hex = unsignedCharArrayToHexString(kwi_char, enc_kwi.size());
 
-            encr_multi_map.insert(enc_kwi_hex,mm.get(ori_key)[i]);
+            // 做一个索引到 key 的映射，方便查找
+            idx2key.insert(pair(full_index,key));
+
+            encr_multi_map.insert(enc_kwi_hex,enc_kwi_hex);
+
+
+            
+        }
+
+    }
+    return encr_multi_map;
+}
+EncryptedMultiMap EncryptManager::setup(RowMultiMap mm,bool value_to_hex) {
+    /*
+     *
+     */
+    EncryptedMultiMap encr_multi_map;
+
+
+    vector<string> keys = mm.getKeys();
+    /*
+     * 先遍历 MM 的 key，也就是数据库行的索引信息，得到每个行向量
+     */
+    for (auto ori_key : keys) {
+        vector<string> data = mm.get(ori_key);
+        /*
+        * 逐个取出行向量中的元素，对索引进行补充，生成随机数后与加密数据一并放入 EMM 中
+        */
+        for(int i = 0; i < data.size(); i++) {
+            const string& full_index = ori_key;
+            int enc_key_size = full_index.size();
+            if(enc_key_size %16!=0) {
+                enc_key_size = enc_key_size / 16 + 16;
+            }
+            // 利用 prf 生成 F(index)
+            unsigned char* enc_idx = new unsigned char[enc_key_size];
+            int key_len = prfFunctionReturnUnsignedChar(full_index, enc_idx);
+            string key = unsignedCharArrayToHexString(enc_idx, key_len);
+            // 将 prf 函数生成的结果转为 16进制字符 再级联 对应的坐标，再进行对称加密，也就是 H(F(index) || row_index)
+            string key_with_index = key + ',' + to_string(i);
+            string enc_kwi = getSymmetricEncryption(key_with_index);
+
+            unsigned char kwi_char[enc_kwi.size()];
+            StringToUchar(enc_kwi,kwi_char);
+
+            string enc_kwi_hex = unsignedCharArrayToHexString(kwi_char, enc_kwi.size());
+
+            // 做一个索引到 key 的映射，方便查找
+            //idx2key.insert(pair(full_index,key));
+
+            if(value_to_hex) {
+                string mmdata = mm.get(ori_key)[i];
+                string mmdata_hex = binaryToHex(mmdata);
+                encr_multi_map.insert(enc_kwi_hex,mmdata_hex);
+            }
+            else {
+                encr_multi_map.insert(enc_kwi_hex,mm.get(ori_key)[i]);
+            }
+
+
+        }
+
+    }
+    return encr_multi_map;
+}
+EncryptedMultiMap EncryptManager::setupPerRow(RowMultiMap mm,bool value_to_hex) {
+    /*
+     *
+     */
+    EncryptedMultiMap encr_multi_map;
+
+
+    vector<string> keys = mm.getKeys();
+    /*
+     * 先遍历 MM 的 key，也就是数据库行的索引信息，得到每个行向量
+     */
+    for (auto ori_key : keys) {
+        vector<string> data = mm.get(ori_key);
+        /*
+        * 逐个取出行向量中的元素，对索引进行补充，生成随机数后与加密数据一并放入 EMM 中
+        */
+        for(int i = 0; i < data.size(); i++) {
+
+            string full_index = ori_key;
+            int enc_key_size = full_index.size();
+            if(enc_key_size %16!=0) {
+                enc_key_size = enc_key_size / 16 + 16;
+            }
+            // 利用 prf 生成 F(index)
+            unsigned char* enc_idx = new unsigned char[enc_key_size];
+            int key_len = prfFunctionReturnUnsignedChar(full_index, enc_idx);
+            string key = unsignedCharArrayToHexString(enc_idx, key_len);
+            // 将 prf 函数生成的结果转为 16进制字符 再级联 对应的坐标，再进行对称加密，也就是 H(F(index) || row_index)
+            string key_with_index = key + ',' + to_string(i);
+            string enc_kwi = getSymmetricEncryption(key_with_index);
+
+            unsigned char kwi_char[enc_kwi.size()];
+            StringToUchar(enc_kwi,kwi_char);
+
+            string enc_kwi_hex = unsignedCharArrayToHexString(kwi_char, enc_kwi.size());
+
+            if(value_to_hex) {
+                string mmdata = mm.get(ori_key)[i];
+                unsigned char mm_char[mmdata.size()];
+                StringToUchar(mmdata,mm_char);
+
+                string mmdata_hex = unsignedCharArrayToHexString(mm_char, mmdata.size());
+                encr_multi_map.insert(enc_kwi_hex,mmdata_hex);
+            }
+            else {
+                encr_multi_map.insert(enc_kwi_hex,mm.get(ori_key)[i]);
+            }
+
 
         }
 

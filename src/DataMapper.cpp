@@ -5,10 +5,13 @@
 #include "DataMapper.h"
 #include <fstream>
 #include <iostream>
+#include <libpq-fe.h>
 #include <sstream>
 #include <string>
 #include <unistd.h>
 #include <vector>
+
+#include "EncryptManager.h"
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
 
@@ -195,7 +198,7 @@ RowMultiMap DataMapper::valueMultiMapConstruct(int tableID, vector<vector<string
     return mmap;
 }
 RowMultiMap DataMapper::joinMultiMapConstruct(int tableID1, int tableID2, vector<vector<string>> table1,
-                                              vector<vector<string>> table2,int joinCol1,int joinCol2, vector<string> columnsTypes) {
+                                              vector<vector<string>> table2,int joinCol1,int joinCol2) {
     stringstream ss;
     RowMultiMap mmap;
     int row_size1 = table1.size();
@@ -203,7 +206,7 @@ RowMultiMap DataMapper::joinMultiMapConstruct(int tableID1, int tableID2, vector
     for(int r1 = 0;r1<row_size1;r1++){
         for(int r2=0;r2<row_size2;r2++){
             string text1 = table1[r1][joinCol1];
-            string text2 = table1[r2][joinCol2];
+            string text2 = table2[r2][joinCol2];
 
             if(text1 == text2){
                 vector<string> row;
@@ -224,7 +227,7 @@ RowMultiMap DataMapper::joinMultiMapConstruct(int tableID1, int tableID2, vector
         }
     }
 
-    return RowMultiMap();
+    return mmap;
 }
 vector<vector<string>> DataMapper::rowMapperDecrypt(RowMultiMap rmm) {
 	string enc_key =DATA_KEY_1;
@@ -283,5 +286,126 @@ vector<vector<string>> DataMapper::fileReader(const string& fileName) {
     }
     return strArray;
                         
+}
+void DataMapper::generateEmmIntoSql(PGconn *conn,int tableID, vector<vector<string>> table, vector<string> types) {
+    EncryptionParameters parms(scheme_type::bfv);
+
+    // 设置 SEAL 参数
+    size_t poly_modulus_degree = 2048;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+
+
+
+    //cout << "从数据源中读入数据:"<< data_src << endl;
+    //vector<vector<string>> tables = data_mapper.fileReader(data_src);
+    //建立 mm，默认表号为 0
+    RowMultiMap mmr = rowMultiMapConstruct(tableID,table,types);
+    RowMultiMap mmv = rowMultiMapConstruct(tableID,table,types);
+
+    EncryptedMultiMap emmr = EncryptManager::setupPerRow(mmr,false);
+    EncryptedMultiMap emmv = EncryptManager::setupPerRow(mmv,true);
+
+
+    //准备执行插入
+    insertEMM(emmr,conn,"mmr",true);
+    insertEMM(emmv,conn,"mmv",false);
+}
+
+void DataMapper::generateJoinEmmIntoSql(PGconn *conn,int tableID1,int tableID2,
+    vector<vector<string>> table1,vector<vector<string>>table2,int joinCol1,int joinCol2) {
+    EncryptionParameters parms(scheme_type::bfv);
+
+    // 设置 SEAL 参数
+    size_t poly_modulus_degree = 2048;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+
+
+
+
+    // cout << "从数据源中读入数据:"<< data_src << endl;
+    //vector<vector<string>> tables = data_mapper.fileReader(data_src);
+    //建立 mm，默认表号为 0
+    RowMultiMap mmjoin = joinMultiMapConstruct(tableID1,tableID2, table1, table2, joinCol1,joinCol2);
+    EncryptedMultiMap emmjoin = EncryptManager::setupPerRow(mmjoin,false);
+
+
+    //准备执行插入
+    insertEMM(emmjoin,conn,"mmr",true);
+}
+
+void DataMapper::insertEMM(EncryptedMultiMap emm, PGconn *conn,string targetTable,bool value_is_bytea) {
+    vector<string> keys = emm.getKeys();
+    //string conninfo = PGSQL_CONNINFO;
+
+    //检查连接状态
+    if (PQstatus(conn) != CONNECTION_OK) {
+        std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
+        PQfinish(conn);
+        return;
+    } else {
+        std::cout << "已成功连接到数据库！\n";
+    }
+    for(auto key : keys) {
+        insertIntoSql(pair<string, string>(key, emm.get(key)),targetTable,conn,value_is_bytea);
+    }
+
+}
+void DataMapper::insertIntoSql(const pair<string,string>& kv,string targetTable,PGconn *conn,bool value_is_bytea) {
+    stringstream ss;
+
+    string key = kv.first;
+    string val = kv.second;
+
+    int key_len = key.size();
+    int val_len = val.size();
+
+    if(value_is_bytea) {
+
+    }
+
+    char *key_copy = new char[key_len+1];
+    char *val_copy = new char[val_len+1];
+    key_copy[key_len] = '\0';
+    stringToChar(key,key_copy);
+    stringToChar(val,val_copy);
+
+    const char *paramValues_1[2] = {key_copy,val_copy};
+    int paramLengths_1[2] = {0,val_len};
+    int paramFormats_1[2] = {0,1};
+
+    if(!value_is_bytea) {
+        val_copy[val_len] = '\0';
+        paramLengths_1[1] = 0;
+        paramFormats_1[1] = 0;
+    }
+
+
+    //const char *paramValues_2[2] = {val_copy,key_copy};
+    // int paramLengths_2[1] = {0};
+    // int paramFormats_2[1] = {0};
+
+    ss << "INSERT INTO "<< targetTable  << "(enc_key,enc_value) VALUES ($1,$2) ON CONFLICT(enc_key)"
+                     << "DO UPDATE SET enc_value = $2 ";
+    string viewSS = ss.str();
+    const string::value_type *sql = viewSS.c_str();
+
+    PGresult *res = PQexecParams(conn,
+                                 sql,
+                                 2,           // 参数个数
+                                 NULL,        // 参数类型 OIDs，NULL 表示让服务器自行推断
+                                 paramValues_1, // 参数值
+                                 paramLengths_1,// 参数长度
+                                 paramFormats_1,
+                                 0);
+
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        std::cerr << "执行key插入操作失败: " << PQerrorMessage(conn) << std::endl;
+    }
+    PQclear(res);
+
 }
 

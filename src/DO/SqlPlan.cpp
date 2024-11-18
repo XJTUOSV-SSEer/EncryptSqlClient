@@ -3,6 +3,11 @@
 //
 
 #include "SqlPlan.h"
-vector<string> SqlPlan::getPlan() {
-    return this->sqlPlans;
+string SqlPlan::getType() {
+    return type;
 }
+vector<string> SqlPlan::getWhereParams() {
+    return whereParams;
+}
+
+

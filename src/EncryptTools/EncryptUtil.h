@@ -62,3 +62,6 @@ vector<unsigned char> hexStringToUnsignedCharArray(const std::string& hexString)
 string getSymmetricEncryption(const string& text, bool return_hex = false);
 
 string encodeHexString(const std::string& str);
+std::string generateRandomString(int length = 32);
+void stringToChar(string str,char* output);
+std::string binaryToHex(const std::string& binaryStr);
