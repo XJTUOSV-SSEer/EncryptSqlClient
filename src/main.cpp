@@ -11,12 +11,10 @@
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
 #include "seal/seal.h"
-#include <iostream>
-#include <libpq-fe.h>
 #include <vector>
-#include <cstdio>
-#include<gmpxx.h>
-#include<gmp.h>
+
+
+
 
 using namespace std;
 using namespace seal;

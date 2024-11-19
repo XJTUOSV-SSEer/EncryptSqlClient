@@ -1,7 +1,7 @@
 //
 // Created by 陈志庭 on 24-10-10.
 //
-#include <gmp.h>
+
 
 
 #include "main.h"
