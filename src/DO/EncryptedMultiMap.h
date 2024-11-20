@@ -20,6 +20,10 @@ private:
      */
     map<string,string> KVmap;
     /**
+     * 存放每一个值的数据类型，用于区分同态和对称加密
+     */
+    map<string,string> typeMap;
+    /**
      * 维护一个所有 key 也就是索引信息的集合，用于遍历。
      */
     vector<string> keys;

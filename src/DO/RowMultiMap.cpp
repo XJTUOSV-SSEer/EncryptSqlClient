@@ -54,6 +54,10 @@ vector<int> RowMultiMap::getCipertextLength(pair<int,int> p_index) {
     vector<int> result = ciperTextLenMap[index];
     return result;
 }
+vector<string> RowMultiMap::getTypes(const string &index){
+    return typeMap[index];
+}
+
 
 vector<string> RowMultiMap::getKeys() {
     vector<string> result;
@@ -66,6 +70,7 @@ bool RowMultiMap::isEmpty() {
 
 void RowMultiMap::setColumnsTypes(vector<string> columnsTypes){
     this->columnsTypes = std::move(columnsTypes); }
+
 string RowMultiMap::getTypesByColumnsID(int columnsID){
     return columnsTypes[columnsID];
 }

@@ -32,6 +32,7 @@ class RowMultiMap {
      * 目前仅有 String 和 Integer 两类。
      */
     vector<string> columnsTypes;
+    map<string,vector<string>> typeMap;
 
 public:
     RowMultiMap();
@@ -40,16 +41,16 @@ public:
     * 向内部的 MM 添加条目信息
     * @param index 索引，格式为 i,j
     * @param inputData 行向量，记录数据库中每行的的信息
-    * @param cipertextLength 加密后对应的密文长度
-    */
-    void add(const string& index, vector<string>& inputData,vector<int> cipertextLength);
+     * @param cipertextLength 加密后对应的密文长度
+     */
+    void add(const string &index, vector<string>& inputData,vector<int> cipertextLength);
 
     /**
     * 向内部的 MM 添加条目信息
     * @param p_index 索引，格式为 pair<int,int>(i,j)
     * @param inputData 行向量，记录数据库中每行的的信息
     */
-    void add(pair<int,int> p_index, vector<string> inputData,vector<int> cipertextLength);
+    void add(pair<int, int> p_index, vector<string> inputData,vector<int> cipertextLength);
 
 
     /**
@@ -83,7 +84,8 @@ public:
      * @param columnsID
      * @return
      */
-    string getTypesByColumnsID(int columnsID);
+    vector<string> getTypes(const string& index);
+    string getTypesByColumnsID(int col_index);
     /**
      * 重载了输出操作符
      */

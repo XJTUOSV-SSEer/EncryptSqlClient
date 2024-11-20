@@ -117,7 +117,7 @@ void DataMapper::insertIntoRowByPrfEncryption(vector<string> &row, vector<int> &
     int cipertext_len = prfFunctionReturnUnsignedChar(text, enc_idx);
     string cipherStr = unsignedCharArrayToHexString(enc_idx, cipertext_len);
 
-    //string cipherStr = UcharToString(ciphertext,cipertext_len);
+    //string cipherStr = UcharToString(enc_idx,cipertext_len);
 
     row.push_back(cipherStr);
     row_text_len.push_back(cipertext_len);
@@ -156,7 +156,7 @@ RowMultiMap DataMapper::rowMultiMapConstruct(int tableID, vector<vector<string> 
 	    // 分别用于标识每行数据和对应长度的向量
 	    vector<string> row;
 		vector<int> row_text_len;
-
+        vector<string> row_type;
 		for(col_index = 0; col_index < col_size; col_index++) {
 			string text = inData[row_index][col_index];
 		    string type = mmap.getTypesByColumnsID(col_index);
@@ -164,9 +164,11 @@ RowMultiMap DataMapper::rowMultiMapConstruct(int tableID, vector<vector<string> 
 		    if(type == "string") {
 		        insertIntoRowBySymmetricEncryption(row, row_text_len, text);
 
+
             } else if(type == "int") {
 		        insertIntoRowByHomomorphicEncryption(row, row_text_len, stoi(text));
-		    }
+            }
+            row_type.push_back(type);
 
 		}
 		mmap.add(index,row,row_text_len);
@@ -337,15 +339,18 @@ void DataMapper::generateEmmIntoSql(PGconn *conn,int tableID, vector<vector<stri
     //vector<vector<string>> tables = data_mapper.fileReader(data_src);
     //建立 mm，默认表号为 0
     RowMultiMap mmr = rowMultiMapConstruct(tableID,table,types);
+    RowMultiMap mmc = colMultiMapConstruct(tableID,table,types);
     RowMultiMap mmv = valueMultiMapConstruct(tableID,table,types);
 
     EncryptedMultiMap emmr = EncryptManager::setupPerRow(mmr,false);
     EncryptedMultiMap emmv = EncryptManager::setupPerRow(mmv,false);
+    EncryptedMultiMap emmc = EncryptManager::setupPerRow(mmc,false);
 
 
     //准备执行插入
     insertEMM(emmr,conn,"mmr",true);
     insertEMM(emmv,conn,"mmv",false);
+    insertEMM(emmc,conn,"mmc",true);
 }
 
 void DataMapper::generateJoinEmmIntoSql(PGconn *conn,int tableID1,int tableID2,
@@ -439,7 +444,7 @@ void DataMapper::insertIntoSql(const pair<string,string>& kv,string targetTable,
                                  0);
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        std::cerr << "执行key插入操作失败: " << PQerrorMessage(conn) << std::endl;
+        std::cerr << "执行key插入操作失败: 表：" << targetTable<<" "<< PQerrorMessage(conn) << std::endl;
     }
     PQclear(res);
 

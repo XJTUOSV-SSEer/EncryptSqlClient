@@ -40,10 +40,11 @@ string generateSigmaQuery(string targetTable, string tmpTable ,string whereParam
     stringstream ss;
 
     ss << "Select "
-    << "enc_query_text(\'"
+    << "enc_query_text_full_table(\'"
     << whereParams << "\',\'"
     << targetTable <<   "\',\'"
-    << tmpTable <<  "\');"
+    << tmpTable <<  "\'"
+    <<                ");"
     ;
 
 
@@ -54,10 +55,9 @@ string generateSigmaQueryFromTmpTable(string fromTable, string toTable,string ta
 
     string select_key = "val";
 
-    ss << "Select " << R"(enc_query_text('val',')"
+    ss << "Select " << R"(enc_query_text_full_table(val,')"
                     << targetTable <<  "\',\'"
-                    << fromTable <<  "\')" << " "
-    << "INTO " << toTable << " "
+                    << toTable <<  "\')" << " "
     << "FROM " << fromTable << ";";
 
 
@@ -66,10 +66,19 @@ string generateSigmaQueryFromTmpTable(string fromTable, string toTable,string ta
 
 string generateProjetcionQueryFromTmpTable(string fromTable, string params,string tmpTable) {
     stringstream ss;
-    ss << "INSERT " << R"(enc_projection_text('val',')"
-                    <<  params <<  "\')" << " "
-    "INTO " << tmpTable << " "
+    ss << "SELECT " << R"(enc_projection_text(val,')"
+                    <<  params <<  "\',\'"
+                    << tmpTable << "\')" << " "
     << "FROM " << fromTable << ";";
+
+    return ss.str();
+}
+
+string generateSumQuery(string params,string tmpTable) {
+    stringstream ss;
+    ss << "SELECT " << R"(sum_by_row_to_tmp(')"
+                    <<  params <<  "\',\'"
+                    << tmpTable << "\')" << ";";
 
     return ss.str();
 }

@@ -24,5 +24,6 @@ string generateSigmaQuery(string targetTable, string tmpTable ,string whereParam
 string generateSigmaQueryFromTmpTable(string fromTable, string toTable,string targetTable);
 
 string generateProjetcionQueryFromTmpTable(string fromTable, string params,string tmpTable);
+string generateSumQuery(string params,string tmpTable);
 #
 #endif // ENCRYPTSQLCLIENT_TOKENGENERATOR_H

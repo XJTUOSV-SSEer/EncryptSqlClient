@@ -370,7 +370,7 @@ int main() {
     string data_src0 = "../Resource/data/table0.csv";
     string data_src1 = "../Resource/data/table1.csv";
 
-    vector<string> types0 = {"string","string","string"};
+    vector<string> types0 = {"string","string","string","int"};
     vector<string> types1 = {"string","string"};
 
     vector<vector<string>> table0 = DataMapper::fileReader(data_src0);
@@ -391,12 +391,26 @@ int main() {
     SqlPlan pl2("join",p2);
     plans.push_back(pl2);
 
-    vector<string> p3 = {"0,1"};
+    vector<string> p3 = {"1"};
     SqlPlan pl3("projection",p3);
     plans.push_back(pl3);
 
-    SqlPlanExecutor sql_plan_executor(conn,plans);
+    vector<SqlPlan> plans2;
+
+
+    string query_key2 = prfFunctionReturnString("0,3",true);
+    vector<string> p4 = {query_key2};
+    SqlPlan pl4("sum",p4);
+    plans2.push_back(pl4);
+
+    vector<string> p5 = {"int"};
+    SqlPlan pl5("result",p5);
+    plans2.push_back(pl5);
+
+    SqlPlanExecutor sql_plan_executor(conn,plans2);
     sql_plan_executor.execute();
+
+    cout << data_mapper.decryptData(sql_plan_executor.getResults()[0][0]) << endl;
 
     return 0;
 }

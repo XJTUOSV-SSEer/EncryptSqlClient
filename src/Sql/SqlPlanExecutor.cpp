@@ -28,55 +28,64 @@ void SqlPlanExecutor::execute() {
             from_table = tmpTables.back();
         }
         ss << "DROP TABLE IF EXISTS " + tmp_table + ";";
-        ss <<  "CREATE TABLE IF NOT EXISTS " + tmp_table
-            + "(val varchar(255));";
+
 
         string sqlQuery,targetTable;
         std::string pType = plan.getType();
         if(pType == "select") {
             targetTable = "mmv";
+            sqlQuery = generateSigmaQuery(targetTable,tmp_table,plan.getParams()[0]);
+            tmpTables.push_back(tmp_table);
+            ss <<  "CREATE TABLE IF NOT EXISTS " + tmp_table
+            + "(val varchar(255));";
         }
         else if(pType == "join") {
             stringstream sstmp;
-            sstmp << "mmjoin_" << plan.getParams()[0] << "_join_" << plan.getParams()[1];
+            sstmp << "mmjoin_" << plan.getParams()[1] << "_join_" << plan.getParams()[0];
             targetTable =sstmp.str();
+            sqlQuery = generateSigmaQueryFromTmpTable(from_table,tmp_table,targetTable);
+            ss <<  "CREATE TABLE IF NOT EXISTS " + tmp_table
+        + "(val varchar(255));";
         }
         else if(pType == "projection") {
             targetTable = "mmr";
+            sqlQuery = generateProjetcionQueryFromTmpTable(from_table,plan.getParams()[0],tmp_table);
+            ss <<  "CREATE TABLE IF NOT EXISTS " + tmp_table
+        + "(val bytea);";
         }
-        //首次查询使用关键字查询，当前仅支持单关键字。
-        if(i==0) {
-            sqlQuery = generateSigmaQuery(targetTable,tmp_table,plan.getParams()[0]);
-            tmpTables.push_back(tmp_table);
+        else if(pType == "sum") {
+            targetTable = "mmc";
+            sqlQuery = generateSumQuery(plan.getParams()[0],tmp_table);
+            ss <<  "CREATE TABLE IF NOT EXISTS " + tmp_table
+        + "(val bytea);";
         }
-        //之后的查询可以直接从临时表中拉取。
-        else {
-            if(pType == "join")sqlQuery = generateSigmaQueryFromTmpTable(from_table,tmp_table,targetTable);
-            if(pType == "projection")sqlQuery = generateProjetcionQueryFromTmpTable(targetTable,plan.getParams()[0],tmp_table);
+        else if(pType == "result") {
+            break;
         }
+
+
+        tmpTables.push_back(tmp_table);
         ss << sqlQuery;
         executeQuery(ss.str());
+        ss.str("");
     }
     string tmpTable = tmpTables.back();
+    SqlPlan result_plan = plans.back();
     string resultSqlQuery = "select * from " + tmpTable;
-    executeResultQuery(resultSqlQuery);
+    if(result_plan.getParams()[0] == "int") {
+        executeByteaResultQuery(resultSqlQuery);
+    }
+    else {
+        executeResultQuery(resultSqlQuery);
+    }
+
     deleteTmp(tmpTables);
+
 }
 
 void SqlPlanExecutor::executeQuery(std::string sqlQuery,bool get_res) {
     const char* query = sqlQuery.c_str();
-    PGresult *res = PQexec(conn, query);
-
-    if (get_res && PQresultStatus(res) != PGRES_TUPLES_OK) {
-        std::cerr << "执行查询失败: " << PQerrorMessage(conn) << std::endl;
-        PQclear(res);
-        PQfinish(conn);
-    }
-    if(!get_res && PQresultStatus(res) != PGRES_COMMAND_OK) {
-        std::cerr << "执行查询失败: " << PQerrorMessage(conn) << std::endl;
-        PQclear(res);
-        PQfinish(conn);
-    }
+    PQexec(conn, query);
 }
 void SqlPlanExecutor::executeResultQuery(std::string sqlQuery) {
     const char* query = sqlQuery.c_str();
@@ -87,12 +96,60 @@ void SqlPlanExecutor::executeResultQuery(std::string sqlQuery) {
         PQclear(res);
         PQfinish(conn);
     }
-    pg_result = res;
+    if (res == nullptr) {
+        throw std::runtime_error("Invalid PGresult pointer");
+    }
+
+    int numRows = PQntuples(res);  // 获取行数
+    int numCols = PQnfields(res); // 获取列数
+
+    for (int i = 0; i < numRows; ++i) {
+        std::vector<std::string> row;
+        for (int j = 0; j < numCols; ++j) {
+            char* value = PQgetvalue(res, i, j); // 获取指定单元格的值
+            row.push_back(value ? value : "NULL"); // 处理 NULL 值
+        }
+        results.push_back(row);
+    }
+}
+
+void SqlPlanExecutor::executeByteaResultQuery(std::string sqlQuery) {
+    const char* query = sqlQuery.c_str();
+    PGresult *res = PQexec(conn, query);
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        std::cerr << "执行查询失败: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res);
+        PQfinish(conn);
+    }
+    if (res == nullptr) {
+        throw std::runtime_error("Invalid PGresult pointer");
+    }
+
+    int numRows = PQntuples(res);  // 获取行数
+    int numCols = PQnfields(res); // 获取列数
+
+    for (int i = 0; i < numRows; ++i) {
+        std::vector<std::string> row;
+        for (int j = 0; j < numCols; ++j) {
+            string::size_type len;
+            unsigned char *data = PQunescapeBytea((unsigned char*)PQgetvalue(res, 0, 0), (size_t*)&len);// 获取指定单元格的值
+            string value = {reinterpret_cast<const char*>(data), len};
+            row.push_back(data ? value : "NULL"); // 处理 NULL 值
+        }
+        results.push_back(row);
+    }
 }
 void SqlPlanExecutor::deleteTmp(std::vector<std::string> tmps) {
     stringstream ss;
     for (const auto & tmp : tmps) {
         ss << "DROP TABLE IF EXISTS " << tmp << ";";
+        executeQuery(ss.str());
+        ss.str("");
     }
+}
+
+std::vector<std::vector<std::string>> SqlPlanExecutor::getResults() {
+    return results;
 }
 

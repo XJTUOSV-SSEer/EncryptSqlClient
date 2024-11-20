@@ -16,15 +16,17 @@ class SqlPlanExecutor {
 private:
     std::vector<SqlPlan> plans;
     PGconn *conn;
-    PGresult *pg_result;
+    std::vector<std::vector<std::string>> results;
     void executeQuery(std::string sql, bool get_res = false);
     void executeResultQuery(std::string sqlQuery);
+    void executeByteaResultQuery(std::string sqlQuery);
     void deleteTmp(std::vector<std::string> tmps);
 public:
     SqlPlanExecutor(PGconn* conn, std::vector<SqlPlan> plans);
     void setConn(PGconn* conn);
     void setPlans(std::vector<SqlPlan> plans);
     void execute();
+    std::vector<std::vector<std::string>> getResults();
 
 };
 

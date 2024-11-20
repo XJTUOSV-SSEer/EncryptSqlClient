@@ -153,18 +153,8 @@ EncryptedMultiMap EncryptManager::setupPerRow(RowMultiMap mm,bool value_to_hex) 
             StringToUchar(enc_kwi,kwi_char);
 
             string enc_kwi_hex = unsignedCharArrayToHexString(kwi_char, enc_kwi.size());
+            encr_multi_map.insert(enc_kwi_hex,mm.get(ori_key)[i]);
 
-            if(value_to_hex) {
-                string mmdata = mm.get(ori_key)[i];
-                unsigned char mm_char[mmdata.size()];
-                StringToUchar(mmdata,mm_char);
-
-                string mmdata_hex = unsignedCharArrayToHexString(mm_char, mmdata.size());
-                encr_multi_map.insert(enc_kwi_hex,mmdata_hex);
-            }
-            else {
-                encr_multi_map.insert(enc_kwi_hex,mm.get(ori_key)[i]);
-            }
 
 
         }
