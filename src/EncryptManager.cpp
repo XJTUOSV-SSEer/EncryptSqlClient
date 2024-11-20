@@ -148,7 +148,7 @@ EncryptedMultiMap EncryptManager::setupPerRow(RowMultiMap mm,bool value_to_hex) 
             // 将 prf 函数生成的结果转为 16进制字符 再级联 对应的坐标，再进行对称加密，也就是 H(F(index) || row_index)
             string key_with_index = key + ',' + to_string(i);
             string enc_kwi = getSymmetricEncryption(key_with_index);
-
+            //cout << enc_kwi.size() << endl;
             unsigned char kwi_char[enc_kwi.size()];
             StringToUchar(enc_kwi,kwi_char);
 

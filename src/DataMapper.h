@@ -77,7 +77,8 @@ public:
          * @param row_text_len 待加入的行/列数据密文长度向量，主要用于对称加密的解密。
          * @param text 文本数据
          */
-        void insertIntoRowBySymmetricEncryption(vector<string> &row, vector<int> &row_text_len, const string& text);
+        void insertIntoRowBySymmetricEncryption(vector<string> &row, vector<int> &row_text_len, const string &text);
+        void insertIntoRowByPrfEncryption(vector<string> &row, vector<int>&row_text_len, const string&text);
         /**
          * 对数据进行同态加密，并加入到 MM 中。key 需要使用 seal::KeyGenerator 生成，并先传入到 rowMultiMapConstruct 中
          * @param row 待加入的行/列向量
@@ -85,8 +86,9 @@ public:
          * @param value 文本数据
          */
         void insertIntoRowByHomomorphicEncryption(vector<string> &row, vector<int>&row_text_len,int value);
-    void insertEMM(EncryptedMultiMap emm, PGconn *conn,string targetTable,bool value_is_bytea);
+    void insertEMM(EncryptedMultiMap emm, PGconn *conn,string targetTable,bool value_is_bytea);void createTableIfNotExsit(PGconn*conn, string table_name,bool value_is_bytea);
     void insertIntoSql(const pair<string, string>&kv,string targetTable,PGconn *conn,bool value_is_bytea);
+    static void load_keys_from_file(SEALContext&context, PublicKey&public_key, SecretKey&secret_key);
 };
 
 

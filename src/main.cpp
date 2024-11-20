@@ -4,16 +4,17 @@
 #include <libpq-fe.h>
 #include <string>
 
-#include "DataMapper.h"
-#include "EncryptManager.h"
+#include <vector>
 #include "DO/EncKey.h"
 #include "DO/EncryptedMultiMap.h"
+#include "DataMapper.h"
+#include "EncryptManager.h"
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
 #include "seal/seal.h"
-#include <vector>
 
-
+#include "DO/SqlPlan.h"
+#include "Sql/SqlPlanExecutor.h"
 
 
 using namespace std;
@@ -296,7 +297,9 @@ void testSumByRow(PGconn *conn) {
     //读入表并生成 mm 和 emm
     DataMapper data_mapper(parms);
     vector<string> types = {"string","int","int","int"};
-    vector<vector<string>> tables = {{"张三","84","90","87"},{"李四","82","91","87"},{"赵六","90","80","72"}};
+    vector<vector<string>> tables = {{"张三","84","90","87"},
+        {"李四","82","91","87"}
+    };
     //cout << "从数据源中读入数据:"<< data_src << endl;
     //vector<vector<string>> tables = data_mapper.fileReader(data_src);
     //建立 mm，默认表号为 0
@@ -353,18 +356,19 @@ int main() {
     string conninfo = PGSQL_CONNINFO;
     PGconn *conn = PQconnectdb(conninfo.c_str());
 
-    EncryptionParameters parms(scheme_type::bfv);
 
+    EncryptionParameters parms(scheme_type::bfv);
+//
     // 设置 SEAL 参数
     size_t poly_modulus_degree = 2048;
     parms.set_poly_modulus_degree(poly_modulus_degree);
     parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
-
+//
     DataMapper data_mapper(parms);
 
-    string data_src0 = "/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/src/data/table0.csv";
-    string data_src1 = "/Users/chenzhiting/ProjectSE/Client_demo/EncryptSqlClient/src/data/table1.csv";
+    string data_src0 = "../Resource/data/table0.csv";
+    string data_src1 = "../Resource/data/table1.csv";
 
     vector<string> types0 = {"string","string","string"};
     vector<string> types1 = {"string","string"};
@@ -374,12 +378,25 @@ int main() {
 
     data_mapper.generateEmmIntoSql(conn,0,table0,types0);
     data_mapper.generateEmmIntoSql(conn,1,table1,types1);
-    data_mapper.generateJoinEmmIntoSql(conn,0,1,table0,table1,2,0);
-    //testFull();
-    //testSeal();
-    //testPaillier();
-	//testPythonScript();
+    data_mapper.generateJoinEmmIntoSql(conn,1,0,table1,table0,0,2);
 
+    vector<SqlPlan> plans;
+
+    string query_key = prfFunctionReturnString("1,1,Math",true);
+    vector<string> p1 = {query_key};
+    SqlPlan pl1("select",p1);
+    plans.push_back(pl1);
+
+    vector<string> p2 = {"0_2","1_0"};
+    SqlPlan pl2("join",p2);
+    plans.push_back(pl2);
+
+    vector<string> p3 = {"0,1"};
+    SqlPlan pl3("projection",p3);
+    plans.push_back(pl3);
+
+    SqlPlanExecutor sql_plan_executor(conn,plans);
+    sql_plan_executor.execute();
 
     return 0;
 }

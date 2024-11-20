@@ -2,14 +2,19 @@
 // Created by 陈志庭 on 24-9-21.
 //
 #include "EncryptUtil.h"
+
+#include <fstream>
+
 #include "../main.h"
 
 #include <iomanip>
 #include <random>
 #include <sstream>
+#include <seal/seal.h>
 
 #include "Crypto_Primitives.h"
-
+using namespace std;
+using namespace seal;
 
 string KeyGeneratorForCP(int length) {
     string RAND_STRING_DICTIONARY = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -175,6 +180,8 @@ string getSymmetricEncryption(const string& text, bool return_hex ){
     int cipertext_len = Crypto_Primitives::sym_encrypt(plain_text,padLength,key_uc,iv_uc,ciphertext);
     //string cipherStr = UcharToString(ciphertext,cipertext_len);
     string cipher_hex = unsignedCharArrayToHexString(ciphertext,cipertext_len);
+   //cout << cipertext_len << endl;
+   //cout << cipher_hex.size() << endl;
     string cipherStr = string(reinterpret_cast<const char*>(ciphertext), cipertext_len);
 
 
@@ -242,3 +249,43 @@ std::string binaryToHex(const std::string& binaryStr) {
 
     return hexStream.str();
 }
+void create_save_keys_to_file() {
+
+    EncryptionParameters parms(scheme_type::bfv);
+    size_t poly_modulus_degree = 2048;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+    // 创建上下文
+    SEALContext context(parms);
+
+    // 密钥生成
+    KeyGenerator keygen(context);
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
+    SecretKey secret_key = keygen.secret_key();
+
+
+    // 保存公钥
+    std::ofstream public_key_file("../Resource/SealKey/public_key.seal", std::ios::binary);
+    public_key.save(public_key_file);
+    public_key_file.close();
+
+    // 保存私钥
+    std::ofstream secret_key_file("../Resource/SealKey/secret_key.seal", std::ios::binary);
+    secret_key.save(secret_key_file);
+    secret_key_file.close();
+
+    // 保存重新线性化密钥
+    //std::ofstream relin_keys_file("./Resource/SealKey/relin_keys.seal", std::ios::binary);
+    //relin_keys.save(relin_keys_file);
+    //relin_keys_file.close();
+//
+    // 保存Galois密钥
+    //std::ofstream galois_keys_file("./Resource/SealKey/galois_keys.seal", std::ios::binary);
+    //galois_keys.save(galois_keys_file);
+    //galois_keys_file.close();
+}
+
+
+

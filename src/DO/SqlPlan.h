@@ -13,10 +13,19 @@ using namespace std;
 class SqlPlan {
 private:
     string type;
-    vector<string> whereParams;
+    vector<string> params;
+
 public:
+
+    /**
+    * SqlPlan 单个计划实体，
+    * @param type 类别如 sigma、join、projection 等
+    * @param params 每个操作类别对应的参数
+
+*/
+    SqlPlan(string type, vector<string> params);
     string getType();
-    vector<string> getWhereParams();
+    vector<string> getParams();
 
 };
 

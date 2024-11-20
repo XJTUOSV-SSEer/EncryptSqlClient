@@ -8,14 +8,19 @@
 #include <vector>
 
 
-class SqlPlan;class SqlPlanExecutor {
+class SqlPlan;
+/**
+ * 执行对应的 sqlplan，主要是将需要的计划转换成对应的 sql 语句
+ */
+class SqlPlanExecutor {
 private:
     std::vector<SqlPlan> plans;
-    PGconn* conn;
-    void executeQuery(std::string sql,bool get_res=false);
+    PGconn *conn;
+    PGresult *pg_result;
+    void executeQuery(std::string sql, bool get_res = false);
+    void executeResultQuery(std::string sqlQuery);
     void deleteTmp(std::vector<std::string> tmps);
 public:
-    SqlPlanExecutor();
     SqlPlanExecutor(PGconn* conn, std::vector<SqlPlan> plans);
     void setConn(PGconn* conn);
     void setPlans(std::vector<SqlPlan> plans);

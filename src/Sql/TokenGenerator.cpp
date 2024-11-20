@@ -36,26 +36,40 @@ string generateSigmaQueryArc(string targetTable, vector<string> whereParams,bool
 
     return ss.str();
 }
-string generateSigmaQuery(string fromTable, string tmpTable ,string whereParams){
+string generateSigmaQuery(string targetTable, string tmpTable ,string whereParams){
     stringstream ss;
 
-    ss << "INSERT "
-    << "enc_query_text(enc_value) "
-    << "INTO " << tmpTable << " "
-    << "FROM " << fromTable << " "
-    << "WHERE enc_key "  << "= " << whereParams << ";";
+    ss << "Select "
+    << "enc_query_text(\'"
+    << whereParams << "\',\'"
+    << targetTable <<   "\',\'"
+    << tmpTable <<  "\');"
+    ;
+
 
     return ss.str();
 }
-string generateSigmaQueryFromTmpTable(string fromTable, string tmpTable){
+string generateSigmaQueryFromTmpTable(string fromTable, string toTable,string targetTable){
     stringstream ss;
 
     string select_key = "val";
 
-    ss << "INSERT " << "enc_query_text(val)" << " "
-    << "INTO " << tmpTable << " "
+    ss << "Select " << R"(enc_query_text('val',')"
+                    << targetTable <<  "\',\'"
+                    << fromTable <<  "\')" << " "
+    << "INTO " << toTable << " "
     << "FROM " << fromTable << ";";
 
+
+    return ss.str();
+}
+
+string generateProjetcionQueryFromTmpTable(string fromTable, string params,string tmpTable) {
+    stringstream ss;
+    ss << "INSERT " << R"(enc_projection_text('val',')"
+                    <<  params <<  "\')" << " "
+    "INTO " << tmpTable << " "
+    << "FROM " << fromTable << ";";
 
     return ss.str();
 }

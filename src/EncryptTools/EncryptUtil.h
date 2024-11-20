@@ -6,6 +6,7 @@
 #ifndef ENCRYPTUTIL_H
 #define ENCRYPTUTIL_H
 #include <iosfwd>
+#include <seal/secretkey.h>
 
 #endif //ENCRYPTUTIL_H
 
@@ -59,9 +60,11 @@ vector<unsigned char> hexStringToUnsignedCharArray(const std::string& hexString)
  * @param text 待加密字符串
  * @return 加密后字符串长度
  */
-string getSymmetricEncryption(const string& text, bool return_hex = false);
+string getSymmetricEncryption(const string &text, bool return_hex = false);
 
-string encodeHexString(const std::string& str);
+string encodeHexString(const std::string &str);
 std::string generateRandomString(int length = 32);
 void stringToChar(string str,char* output);
 std::string binaryToHex(const std::string& binaryStr);
+
+void create_save_keys_to_file();
