@@ -370,9 +370,9 @@ bool testPlanExcutor(PGconn *conn) {
     vector<vector<string>> table0 = DataMapper::fileReader(data_src0);
     vector<vector<string>> table1 = DataMapper::fileReader(data_src1);
 
-    data_mapper.generateEmmIntoSql(conn,"student",table0,types0);
+    data_mapper.generateEmmIntoSql(conn,"students",table0,types0);
     data_mapper.generateEmmIntoSql(conn,1,table1,types1);
-    data_mapper.generateJoinEmmIntoSql(conn,1,0,table1,table0,2,0);
+    data_mapper.generateJoinEmmIntoSql(conn,1,0,table1,table0,0,2);
 
     vector<SqlPlan> plans;
 
@@ -392,7 +392,7 @@ bool testPlanExcutor(PGconn *conn) {
     vector<SqlPlan> plans2;
 
 
-    string query_key2 = prfFunctionReturnString("0,3",true);
+    string query_key2 = prfFunctionReturnString("students,3",true);
     vector<string> p4 = {query_key2};
     SqlPlan pl4("sum",p4);
     plans2.push_back(pl4);
@@ -409,7 +409,7 @@ bool testPlanExcutor(PGconn *conn) {
 }
 
 int main() {
-    string conninfo = PGSQL_CONNINFO;
+    string conninfo = PGSQL_CONNINFO_remote;
     PGconn *conn = PQconnectdb(conninfo.c_str());
 
     testPlanExcutor(conn);

@@ -184,7 +184,7 @@ RowMultiMap DataMapper::colMultiMapConstruct(string table_name, vector<vector<st
 
     int row_index = 0, col_index = 0;
     for(;col_index < col_size; col_index++) {
-        string index = table_name + ","+to_string(row_index);
+        string index = table_name + ","+to_string(col_index);
         // 分别用于标识每列数据和对应长度的向量
         vector<string> col;
         vector<int> col_text_len;
