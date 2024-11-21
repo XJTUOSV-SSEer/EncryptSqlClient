@@ -32,19 +32,21 @@ public:
     PublicKey initializePublicKey();
     /**
      * 构建行向量多映射结构
-     * @param tableID 表的编号
+     * @param table_name
      * @param inData 数据
      * @param columnsTypes 每列的属性
      * @return
      */
-    RowMultiMap rowMultiMapConstruct(int tableID, vector<vector<string>> inData, vector<string> columnsTypes);
-    RowMultiMap colMultiMapConstruct(int tableID, vector<vector<string>>inData, vector<string>columnsTypes);
+    RowMultiMap rowMultiMapConstruct( string table_name, vector<vector<string>> inData, vector<string> columnsTypes);
+    RowMultiMap colMultiMapConstruct( string table_name, vector<vector<string>> inData, vector<string> columnsTypes);
 
-    RowMultiMap valueMultiMapConstruct(int tableID, vector<vector<string>> inData, vector<string> columnsTypes);
-    RowMultiMap joinMultiMapConstruct(int tableID1, int tableID2, vector<vector<string>> table1,
-                                      vector<vector<string>> table2, int joinCol1, int joinCol2);
+    RowMultiMap valueMultiMapConstruct( string table_name, vector<vector<string>> inData, vector<string> columnsTypes);
+    RowMultiMap joinMultiMapConstruct(string table_name1, string table_name2, vector<vector<string>> table1, vector<vector<string>> table2, int joinCol1,int joinCol2);
     void generateEmmIntoSql(PGconn *conn, int tableID, vector<vector<string>> Table, vector<string> columnsTypes);
-    void generateJoinEmmIntoSql(PGconn *conn, int tableID1, int tableID2, vector<vector<string>>table1, vector<vector<string>>table2, int targetCol1, int targetCol2);
+    void generateEmmIntoSql(PGconn *conn, string table_name, vector<vector<string>> table, vector<string> types);
+    void generateJoinEmmIntoSql(PGconn *conn, string table_name1, string table_name2, vector<vector<string>> table1,
+                                vector<vector<string>> table2, int joinCol1, int joinCol2);
+    void generateJoinEmmIntoSql(PGconn *conn, int tableID1, int tableID2, vector<vector<string>>table1, vector<vector<string>>table2, int joinCol1, int joinCol2);
     int decryptData(string cipertext);
     static vector<vector<string>> rowMapperDecrypt(RowMultiMap rmm);
 

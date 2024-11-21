@@ -144,7 +144,7 @@ void DataMapper::insertIntoRowByHomomorphicEncryption(vector<string> &row, vecto
 
 
 
-RowMultiMap DataMapper::rowMultiMapConstruct(int tableID, vector<vector<string> > inData,vector<string> columnsTypes) {
+RowMultiMap DataMapper::rowMultiMapConstruct(string table_name, vector<vector<string> > inData,vector<string> columnsTypes) {
 	RowMultiMap mmap;
 	mmap.setColumnsTypes(columnsTypes);
 	const int row_size = inData.size();
@@ -152,7 +152,7 @@ RowMultiMap DataMapper::rowMultiMapConstruct(int tableID, vector<vector<string> 
 
 	int row_index = 0, col_index = 0;
 	for(;row_index < row_size; row_index++) {
-		pair index(tableID,row_index);
+		string index = table_name +","+ to_string(row_index);
 	    // 分别用于标识每行数据和对应长度的向量
 	    vector<string> row;
 		vector<int> row_text_len;
@@ -176,7 +176,7 @@ RowMultiMap DataMapper::rowMultiMapConstruct(int tableID, vector<vector<string> 
 	return mmap;
 }
 
-RowMultiMap DataMapper::colMultiMapConstruct(int tableID, vector<vector<string> > inData,vector<string> columnsTypes) {
+RowMultiMap DataMapper::colMultiMapConstruct(string table_name, vector<vector<string> > inData,vector<string> columnsTypes) {
     RowMultiMap mmap;
     mmap.setColumnsTypes(columnsTypes);
     const int row_size = inData.size();
@@ -184,7 +184,7 @@ RowMultiMap DataMapper::colMultiMapConstruct(int tableID, vector<vector<string> 
 
     int row_index = 0, col_index = 0;
     for(;col_index < col_size; col_index++) {
-        pair index(tableID,col_index);
+        string index = table_name + ","+to_string(row_index);
         // 分别用于标识每列数据和对应长度的向量
         vector<string> col;
         vector<int> col_text_len;
@@ -205,7 +205,7 @@ RowMultiMap DataMapper::colMultiMapConstruct(int tableID, vector<vector<string> 
     }
     return mmap;
 }
-RowMultiMap DataMapper::valueMultiMapConstruct(int tableID, vector<vector<string>> inData,
+RowMultiMap DataMapper::valueMultiMapConstruct(string table_name, vector<vector<string>> inData,
                                                vector<string> columnsTypes) {
     RowMultiMap mmap;
     stringstream ss;
@@ -224,11 +224,11 @@ RowMultiMap DataMapper::valueMultiMapConstruct(int tableID, vector<vector<string
             vector<int> row_text_len;
             string text = inData[row_index][col_index];
 
-            ss << tableID << "," << col_index << "," << text;
+            ss << table_name << "," << col_index << "," << text;
             string index  = ss.str();
             ss.str("");
 
-            ss << tableID << "," << row_index;
+            ss << table_name << "," << row_index;
             string valuePlainText = ss.str();
             ss.str("");
 
@@ -240,7 +240,7 @@ RowMultiMap DataMapper::valueMultiMapConstruct(int tableID, vector<vector<string
     }
     return mmap;
 }
-RowMultiMap DataMapper::joinMultiMapConstruct(int tableID1, int tableID2, vector<vector<string>> table1,
+RowMultiMap DataMapper::joinMultiMapConstruct(string table_name1, string table_name2, vector<vector<string>> table1,
                                               vector<vector<string>> table2,int joinCol1,int joinCol2) {
     stringstream ss;
     RowMultiMap mmap;
@@ -255,11 +255,11 @@ RowMultiMap DataMapper::joinMultiMapConstruct(int tableID1, int tableID2, vector
                 vector<string> row;
                 vector<int> row_text_len;
 
-                ss << tableID1 << "," << r1;
+                ss << table_name1 << "," << r1;
                 string index = ss.str();
                 ss.str("");
 
-                ss << tableID2 << "," << r2;
+                ss << table_name2 << "," << r2;
                 string value = ss.str();
                 ss.str("");
 
@@ -336,11 +336,11 @@ void DataMapper::generateEmmIntoSql(PGconn *conn,int tableID, vector<vector<stri
 
 
     //cout << "从数据源中读入数据:"<< data_src << endl;
-    //vector<vector<string>> tables = data_mapper.fileReader(data_src);
+    // vector<vector<string>> tables = data_mapper.fileReader(data_src);
     //建立 mm，默认表号为 0
-    RowMultiMap mmr = rowMultiMapConstruct(tableID,table,types);
-    RowMultiMap mmc = colMultiMapConstruct(tableID,table,types);
-    RowMultiMap mmv = valueMultiMapConstruct(tableID,table,types);
+    RowMultiMap mmr = rowMultiMapConstruct(to_string(tableID),table,types);
+    RowMultiMap mmc = colMultiMapConstruct(to_string(tableID),table,types);
+    RowMultiMap mmv = valueMultiMapConstruct(to_string(tableID),table,types);
 
     EncryptedMultiMap emmr = EncryptManager::setupPerRow(mmr,false);
     EncryptedMultiMap emmv = EncryptManager::setupPerRow(mmv,false);
@@ -353,16 +353,52 @@ void DataMapper::generateEmmIntoSql(PGconn *conn,int tableID, vector<vector<stri
     insertEMM(emmc,conn,"mmc",true);
 }
 
-void DataMapper::generateJoinEmmIntoSql(PGconn *conn,int tableID1,int tableID2,
+void DataMapper::generateEmmIntoSql(PGconn *conn,string table_name, vector<vector<string>> table, vector<string> types) {
+
+
+    //cout << "从数据源中读入数据:"<< data_src << endl;
+    //vector<vector<string>> tables = data_mapper.fileReader(data_src);
+    // 建立 mm，默认表号为 0
+    RowMultiMap mmr = rowMultiMapConstruct(table_name,table,types);
+    RowMultiMap mmc = colMultiMapConstruct(table_name,table,types);
+    RowMultiMap mmv = valueMultiMapConstruct(table_name,table,types);
+
+    EncryptedMultiMap emmr = EncryptManager::setupPerRow(mmr,false);
+    EncryptedMultiMap emmv = EncryptManager::setupPerRow(mmv,false);
+    EncryptedMultiMap emmc = EncryptManager::setupPerRow(mmc,false);
+
+
+    //准备执行插入
+    insertEMM(emmr,conn,"mmr",true);
+    insertEMM(emmv,conn,"mmv",false);
+    insertEMM(emmc,conn,"mmc",true);
+}
+
+
+void DataMapper::generateJoinEmmIntoSql(PGconn *conn, string table_name1, string table_name2,
     vector<vector<string>> table1,vector<vector<string>>table2,int joinCol1,int joinCol2) {
 
     stringstream ss;
 
-    RowMultiMap mmjoin = joinMultiMapConstruct(tableID1,tableID2, table1, table2, joinCol1,joinCol2);
+    RowMultiMap mmjoin = joinMultiMapConstruct(table_name1,table_name2, table1, table2, joinCol1,joinCol2);
+    EncryptedMultiMap emmjoin = EncryptManager::setupPerRow(mmjoin,false);
+
+    ss << "mmjoin_" << table_name1<< "_" << joinCol1 << "_join_"
+    << table_name2<< "_" << joinCol2;
+    //准备执行插入
+    insertEMM(emmjoin,conn,ss.str(),false);
+}
+
+void DataMapper::generateJoinEmmIntoSql(PGconn *conn, int tableID1, int tableID2,
+    vector<vector<string>> table1,vector<vector<string>>table2,int joinCol1,int joinCol2) {
+
+    stringstream ss;
+
+    RowMultiMap mmjoin = joinMultiMapConstruct(to_string(tableID1),to_string(tableID2), table1, table2, joinCol1,joinCol2);
     EncryptedMultiMap emmjoin = EncryptManager::setupPerRow(mmjoin,false);
 
     ss << "mmjoin_" << tableID1<< "_" << joinCol1 << "_join_"
-    << tableID2 << "_" << joinCol2;
+    << tableID2<< "_" << joinCol2;
     //准备执行插入
     insertEMM(emmjoin,conn,ss.str(),false);
 }

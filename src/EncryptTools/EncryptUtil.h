@@ -61,6 +61,12 @@ vector<unsigned char> hexStringToUnsignedCharArray(const std::string& hexString)
  * @return 加密后字符串长度
  */
 string getSymmetricEncryption(const string &text, bool return_hex = false);
+/**
+ * 对字符串进行哈希
+ * @param text 待加密字符串
+ * @return 加密后字符串长度
+ */
+string getHashEncryption(const string& text, bool return_hex );
 
 string encodeHexString(const std::string &str);
 std::string generateRandomString(int length = 32);

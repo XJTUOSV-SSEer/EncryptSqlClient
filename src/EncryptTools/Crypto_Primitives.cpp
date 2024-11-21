@@ -96,7 +96,7 @@ int Crypto_Primitives::sym_encrypt(unsigned char *plaintext, int plaintext_len, 
 
 
 
-    return ciphertext_len / 2;
+    return ciphertext_len;
 }
 
 int Crypto_Primitives::sym_decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,

@@ -303,7 +303,7 @@ void testSumByRow(PGconn *conn) {
     //cout << "从数据源中读入数据:"<< data_src << endl;
     //vector<vector<string>> tables = data_mapper.fileReader(data_src);
     //建立 mm，默认表号为 0
-    RowMultiMap mm = data_mapper.colMultiMapConstruct(0,tables,types);
+    RowMultiMap mm = data_mapper.colMultiMapConstruct("0",tables,types);
     map<string,string> index_to_keys;
 
     EncryptManager encrypt_manager = EncryptManager();
@@ -350,21 +350,15 @@ void testSumByRow(PGconn *conn) {
     cout << "获得查询结果：" <<f_res << endl;
     PQfinish(conn);
 }
-
-
-int main() {
-    string conninfo = PGSQL_CONNINFO;
-    PGconn *conn = PQconnectdb(conninfo.c_str());
-
-
+bool testPlanExcutor(PGconn *conn) {
     EncryptionParameters parms(scheme_type::bfv);
-//
+    //
     // 设置 SEAL 参数
     size_t poly_modulus_degree = 2048;
     parms.set_poly_modulus_degree(poly_modulus_degree);
     parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
-//
+    //
     DataMapper data_mapper(parms);
 
     string data_src0 = "../Resource/data/table0.csv";
@@ -376,9 +370,9 @@ int main() {
     vector<vector<string>> table0 = DataMapper::fileReader(data_src0);
     vector<vector<string>> table1 = DataMapper::fileReader(data_src1);
 
-    data_mapper.generateEmmIntoSql(conn,0,table0,types0);
+    data_mapper.generateEmmIntoSql(conn,"student",table0,types0);
     data_mapper.generateEmmIntoSql(conn,1,table1,types1);
-    data_mapper.generateJoinEmmIntoSql(conn,1,0,table1,table0,0,2);
+    data_mapper.generateJoinEmmIntoSql(conn,1,0,table1,table0,2,0);
 
     vector<SqlPlan> plans;
 
@@ -411,6 +405,14 @@ int main() {
     sql_plan_executor.execute();
 
     cout << data_mapper.decryptData(sql_plan_executor.getResults()[0][0]) << endl;
+    return true;
+}
+
+int main() {
+    string conninfo = PGSQL_CONNINFO;
+    PGconn *conn = PQconnectdb(conninfo.c_str());
+
+    testPlanExcutor(conn);
 
     return 0;
 }

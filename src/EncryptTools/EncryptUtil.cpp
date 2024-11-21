@@ -193,6 +193,39 @@ string getSymmetricEncryption(const string& text, bool return_hex ){
     }
     return cipherStr;
 }
+
+string getHashEncryption(const string& text, bool return_hex ){
+
+
+    int padLength = text.size();
+
+
+
+    auto* plain_text = new unsigned char[padLength];
+    auto* ciphertext = new unsigned char[64];
+
+
+
+    StringToUchar(text,plain_text);
+    unsigned int  cipertext_len =0;
+    Crypto_Primitives::SHA512_digest(plain_text,padLength,ciphertext,&cipertext_len);
+    //string cipherStr = UcharToString(ciphertext,cipertext_len);
+
+    cipertext_len = 16;
+
+    string cipher_hex = unsignedCharArrayToHexString(ciphertext,cipertext_len);
+    //cout << cipertext_len << endl;
+    //cout << cipher_hex.size() << endl;
+    string cipherStr = string(reinterpret_cast<const char*>(ciphertext), cipertext_len);
+
+
+    delete[] plain_text;
+
+    if(return_hex) {
+        return cipher_hex;
+    }
+    return cipherStr;
+}
 string encodeHexString(const std::string& str) {
     // 根据默认编码获取字节数组
     const std::string hexString = "0123456789abcdef";
