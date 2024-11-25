@@ -4,7 +4,7 @@
 
 #ifndef ENCRYPTMANAGER_H
 #define ENCRYPTMANAGER_H
-#include "DO/EncryptedMultiMap.h"
+#include "dataObject/EncryptedMultiMap.h"
 
 /**
  * 实现论文中提到的 Setup 和 Token 函数

@@ -15,7 +15,7 @@
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
 
-#include "DO/RowMultiMap.h"
+#include "dataObject/RowMultiMap.h"
 #include "main.h"
 #include "seal/seal.h"
 using namespace std;
@@ -72,25 +72,13 @@ void DataMapper::insertIntoRowBySymmetricEncryption(vector<string> &row, vector<
     }
 
 
-    auto* plain_text = new unsigned char[padLength];
-    auto* ciphertext = new unsigned char[padLength + 16];
-    auto* key_uc = new unsigned char[key.size()];
-    auto* iv_uc = new unsigned char[iv.size()];
-
-    StringToUchar(key,key_uc);
-    StringToUchar(iv,iv_uc);
-    //StringToUchar(text,plain_text);
-
-    padding16(text,plain_text);
-    int cipertext_len = Crypto_Primitives::sym_encrypt(plain_text,padLength,key_uc,iv_uc,ciphertext);
+    string cipher_text = getSymmetricEncryption(text,false);
+    int ciphertext_len = cipher_text.size();
     //string cipherStr = UcharToString(ciphertext,cipertext_len);
-    string cipherStr = string(reinterpret_cast<const char*>(ciphertext), cipertext_len);
-    row.push_back(cipherStr);
-    row_text_len.push_back(cipertext_len);
 
-    delete[] plain_text;
-    delete[] key_uc;
-    delete[] iv_uc;
+    row.push_back(cipher_text);
+    row_text_len.push_back(ciphertext_len);
+
 }
 void DataMapper::insertIntoRowByPrfEncryption(vector<string> &row, vector<int> &row_text_len,const string& text){
     string MMType = "row";

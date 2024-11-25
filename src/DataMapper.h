@@ -17,8 +17,8 @@
 #include <string>
 #include <vector>
 
-#include "DO/EncryptedMultiMap.h"
-#include "DO/RowMultiMap.h"
+#include "dataObject/EncryptedMultiMap.h"
+#include "dataObject/RowMultiMap.h"
 using namespace std;
 using namespace seal;
 

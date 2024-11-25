@@ -67,6 +67,7 @@ string getSymmetricEncryption(const string &text, bool return_hex = false);
  * @return 加密后字符串长度
  */
 string getHashEncryption(const string& text, bool return_hex );
+string decryptSymmetricEncryption(const string& cipher_text);
 
 string encodeHexString(const std::string &str);
 std::string generateRandomString(int length = 32);
@@ -74,3 +75,6 @@ void stringToChar(string str,char* output);
 std::string binaryToHex(const std::string& binaryStr);
 
 void create_save_keys_to_file();
+int find_first_of(const string& str, const string& substr);
+
+seal::EncryptionParameters getEncryptionParameters(seal::EncryptionParameters parameters);

@@ -7,8 +7,8 @@
 #include <sstream>
 #include <utility>
 
-#include "../DO/SqlPlan.h"
 #include "../EncryptTools/EncryptUtil.h"
+#include "../dataObject/SqlPlan.h"
 #include "TokenGenerator.h"
 SqlPlanExecutor::SqlPlanExecutor(PGconn *conn,std::vector<SqlPlan> plan){
     this->plans = std::move(plan);
@@ -72,12 +72,13 @@ void SqlPlanExecutor::execute() {
     string tmpTable = tmpTables.back();
     SqlPlan result_plan = plans.back();
     string resultSqlQuery = "select * from " + tmpTable;
-    if(result_plan.getParams()[0] == "int") {
-        executeByteaResultQuery(resultSqlQuery);
-    }
-    else {
-        executeResultQuery(resultSqlQuery);
-    }
+    executeByteaResultQuery(resultSqlQuery);
+    //if(result_plan.getParams()[0] == "int") {
+    //    executeByteaResultQuery(resultSqlQuery);
+    //}
+    //else {
+    //    executeResultQuery(resultSqlQuery);
+    //}
 
     deleteTmp(tmpTables);
 
@@ -133,7 +134,7 @@ void SqlPlanExecutor::executeByteaResultQuery(std::string sqlQuery) {
         std::vector<std::string> row;
         for (int j = 0; j < numCols; ++j) {
             string::size_type len;
-            unsigned char *data = PQunescapeBytea((unsigned char*)PQgetvalue(res, 0, 0), (size_t*)&len);// 获取指定单元格的值
+            unsigned char *data = PQunescapeBytea((unsigned char*)PQgetvalue(res, i, j), (size_t*)&len);// 获取指定单元格的值
             string value = {reinterpret_cast<const char*>(data), len};
             row.push_back(data ? value : "NULL"); // 处理 NULL 值
         }

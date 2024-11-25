@@ -12,10 +12,10 @@
 
 #include "DataMapper.h"
 #include "EncryptManager.h"
-#include "DO/EncKey.h"
-#include "DO/EncryptedMultiMap.h"
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
+#include "dataObject/EncKey.h"
+#include "dataObject/EncryptedMultiMap.h"
 #include "seal/seal.h"
 using namespace std;
 using namespace seal;

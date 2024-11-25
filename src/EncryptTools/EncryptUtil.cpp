@@ -73,7 +73,7 @@ void padding16(string plainText,unsigned char* hexData) {
             hexData[i] = plainText[i];
         }
         else {
-            hexData[i] = '0';
+            hexData[i] = '#';
         }
     }
 
@@ -319,6 +319,48 @@ void create_save_keys_to_file() {
     //galois_keys.save(galois_keys_file);
     //galois_keys_file.close();
 }
+
+string decryptSymmetricEncryption(const string& cipher_text) {
+    string key = DATA_KEY_1;
+    string iv = DATA_IV_1;
+
+
+    auto* plain_text = new unsigned char[128];
+    auto* ciphertext = new unsigned char[128];
+    auto* key_uc = new unsigned char[key.size()];
+    auto* iv_uc = new unsigned char[iv.size()];
+
+    StringToUchar(key,key_uc);
+    StringToUchar(iv,iv_uc);
+    StringToUchar(cipher_text,ciphertext);
+
+
+
+    int plain_text_len = Crypto_Primitives::sym_decrypt(ciphertext,cipher_text.size(),key_uc,iv_uc,plain_text);
+
+    string res = UcharToString(plain_text,plain_text_len);
+
+    int last = find_first_of(res,"#");
+    if(last != -1) {
+        res.erase(last);
+    }
+
+
+    return res;
+}
+
+int find_first_of(const string& str, const string& substr) {
+    int pos = 0;
+    while (pos < str.size()) {
+
+        if (str[pos] == substr[0]) {
+            return pos;
+        }
+        pos++;
+    }
+    return -1;
+}
+
 
 
 

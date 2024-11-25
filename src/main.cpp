@@ -5,16 +5,17 @@
 #include <string>
 
 #include <vector>
-#include "DO/EncKey.h"
-#include "DO/EncryptedMultiMap.h"
 #include "DataMapper.h"
 #include "EncryptManager.h"
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
+#include "SocketServer/msgSocket.h"
+#include "dataObject/EncKey.h"
+#include "dataObject/EncryptedMultiMap.h"
 #include "seal/seal.h"
-
-#include "DO/SqlPlan.h"
+#include "dataObject/SqlPlan.h"
 #include "Sql/SqlPlanExecutor.h"
+#include "dataObject/SqlPlan.h"
 
 
 using namespace std;
@@ -284,7 +285,6 @@ vector<string> keysToEncrptedKeys(vector<string> keys,map<string,string> index_t
 
 void testSumByRow(PGconn *conn) {
     EncryptionParameters parms(scheme_type::bfv);
-
     // 设置 SEAL 参数
     size_t poly_modulus_degree = 2048;
     parms.set_poly_modulus_degree(poly_modulus_degree);
@@ -370,13 +370,13 @@ bool testPlanExcutor(PGconn *conn) {
     vector<vector<string>> table0 = DataMapper::fileReader(data_src0);
     vector<vector<string>> table1 = DataMapper::fileReader(data_src1);
 
-    data_mapper.generateEmmIntoSql(conn,"students",table0,types0);
+    data_mapper.generateEmmIntoSql(conn,0,table0,types0);
     data_mapper.generateEmmIntoSql(conn,1,table1,types1);
     data_mapper.generateJoinEmmIntoSql(conn,1,0,table1,table0,0,2);
 
     vector<SqlPlan> plans;
 
-    string query_key = prfFunctionReturnString("1,1,Math",true);
+    string query_key = prfFunctionReturnString("1,1,CS",true);
     vector<string> p1 = {query_key};
     SqlPlan pl1("select",p1);
     plans.push_back(pl1);
@@ -391,7 +391,6 @@ bool testPlanExcutor(PGconn *conn) {
 
     vector<SqlPlan> plans2;
 
-
     string query_key2 = prfFunctionReturnString("students,3",true);
     vector<string> p4 = {query_key2};
     SqlPlan pl4("sum",p4);
@@ -401,18 +400,52 @@ bool testPlanExcutor(PGconn *conn) {
     SqlPlan pl5("result",p5);
     plans2.push_back(pl5);
 
-    SqlPlanExecutor sql_plan_executor(conn,plans2);
+    SqlPlanExecutor sql_plan_executor(conn,plans);
     sql_plan_executor.execute();
 
-    cout << data_mapper.decryptData(sql_plan_executor.getResults()[0][0]) << endl;
+    cout<< "plain_res1: " << decryptSymmetricEncryption(sql_plan_executor.getResults()[0][0]) << endl;
+    //cout<< "plain_res2: " << decryptSymmetricEncryption(sql_plan_executor.getResults()[1][0]) << endl;
+
+
+    //cout << data_mapper.decryptData(sql_plan_executor.getResults()[0][0]) << endl;
     return true;
+}
+void testSocketRecv() {
+
+    int serverSock = -1,acceptSock=-1;
+    serverSock = create_serverSocket();
+    if(serverSock < 0){
+        printf("failed to create server socket\n");
+        exit(-1);
+    }
+
+    signal(SIGPIPE, SIG_IGN);
+
+    struct sockaddr_in client_addr;
+    socklen_t client_addr_size = sizeof(client_addr);
+
+    while (1){ //服务器循环接受客户端socket请求
+        printf("start to accept\n");
+        acceptSock = accept(serverSock,(struct sockaddr*)&client_addr, &client_addr_size);
+        if (acceptSock == -1) {
+            perror("Accept failed");
+            continue;
+        }
+        printf("Succeed to accept client: %d\n",acceptSock);
+        pthread_t id;
+        threadArgs aArg = {serverSock,acceptSock};
+        thread_func((void *)&aArg);
+    }
+    close(serverSock);
+
+
 }
 
 int main() {
     string conninfo = PGSQL_CONNINFO_remote;
     PGconn *conn = PQconnectdb(conninfo.c_str());
 
-    testPlanExcutor(conn);
+    //testPlanExcutor(conn);
 
     return 0;
 }
