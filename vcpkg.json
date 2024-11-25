@@ -1,0 +1,30 @@
+{
+  "name" : "encryptsqlclient",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "c69fb9b969ec1464f503b07051ac8808f24c84c3",
+  "dependencies" : [ {
+    "name" : "gtest",
+    "version>=" : "1.15.2"
+  }, {
+    "name" : "vcpkg-cmake-config",
+    "version>=" : "2024-05-23"
+  }, {
+    "name" : "vcpkg-cmake",
+    "version>=" : "2024-04-23"
+  }, {
+    "name" : "seal",
+    "version>=" : "4.1.2"
+  }, {
+    "name" : "jsoncpp",
+    "version>=" : "1.9.6"
+  }, {
+    "name" : "openssl",
+    "version>=" : "3.4.0"
+  }, {
+    "name" : "libpq",
+    "version>=" : "16.4"
+  }, {
+    "name" : "drogon",
+    "version>=" : "1.9.8"
+  } ]
+}
