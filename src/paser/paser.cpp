@@ -1,0 +1,155 @@
+#include <iostream>
+#include <string>
+#include <regex>
+#include <map>
+#include <algorithm>
+
+#include "../dataObject/dataObject.h"
+using namespace std;
+
+// 判断是否为普通查询
+bool isSelectType(const string& sqlQuery) {
+    regex selectRegex(R"(SELECT\s+(.*?)\s+FROM)", regex::icase);
+    smatch match;
+
+    if (regex_search(sqlQuery, match, selectRegex)) {
+        string selectClause = match[1];
+
+        // 检查是否包含聚合函数，如 SUM
+        regex sumRegex(R"(SUM\()", regex::icase);
+        if (!regex_search(selectClause, sumRegex)) {
+            cout << "这是普通查询" << endl;
+            return true; // 没有 SUM，则是普通 SELECT
+        }
+    }
+    return false; // 未找到 SELECT 或包含聚合函数
+}
+
+// 判断是否为聚合查询（如 SUM）
+bool isAggregationType(const string& sqlQuery) {
+    regex selectRegex(R"(SELECT\s+(.*?)\s+FROM)", regex::icase);
+    smatch match;
+
+    if (regex_search(sqlQuery, match, selectRegex)) {
+        string selectClause = match[1];
+
+        // 检查是否包含 SUM
+        regex sumRegex(R"(SUM\()", regex::icase);
+        if (regex_search(selectClause, sumRegex)) {
+            cout << "这是包含聚合函数的查询" << endl;
+            return true; // 包含 SUM，则是聚合查询
+        }
+    }
+    return false; // 未找到 SELECT 或不包含聚合函数
+}
+
+// 解析 WHERE 子句中的查询值，并返回它在二维数组中的列索引
+int parseWhereConditionColIndex(const string& sqlQuery, const vector<string>& table) {
+    // 修改正则表达式以匹配带单引号的值
+    regex whereRegex(R"(WHERE\s+(\w+)\s*=\s*'(\w+)')", regex::icase);
+    smatch match;
+
+    if (regex_search(sqlQuery, match, whereRegex)) {
+        string field = match[1];    // 提取字段名
+        string value = match[2];    // 提取字段值（去除单引号）
+
+        // 查找字段名在表头中的列索引
+        int colIndex = -1;
+        for (int i = 0; i < table.size(); ++i) {
+            if (table[i] == field) {
+                colIndex = i; // 找到字段名所在列的索引
+                return i;
+            }
+        }
+
+        // 如果未找到字段名，返回 -1
+        if (colIndex == -1) {
+            return -1;
+        }
+
+    }
+
+    return -1; // 未找到匹配的列，返回 -1
+}
+
+// 解析普通 SELECT 查询的属性并返回所在的列索引
+int parseSelectAttributeColIndex(const string& sqlQuery, const vector<string>& table) {
+    regex selectRegex(R"(SELECT\s+(\w+)\s+FROM)", regex::icase);
+    smatch match;
+
+    if (regex_search(sqlQuery, match, selectRegex)) {
+        string attribute = match[1]; // 提取 SELECT 和 FROM 之间的字段
+
+        // 匹配字段名到表头，返回列索引
+        for (int i = 0; i < table.size(); ++i) {
+            if (table[i] == attribute) {
+                return i; // 返回列索引
+            }
+        }
+    }
+    return -1; // 未找到，返回 -1
+}
+
+// 解析 SUM 聚合查询的属性并返回所在的列索引
+int parseSumAttributeColIndex(const string& sqlQuery, const vector<string>& table) {
+    regex sumRegex(R"(SUM\((\w+)\))", regex::icase);
+    smatch match;
+
+    if (regex_search(sqlQuery, match, sumRegex)) {
+        string attribute = match[1]; // 提取 SUM 中的字段
+
+        // 匹配字段名到表头，返回列索引
+        for (int i = 0; i < table.size(); ++i) {
+            if (table[i] == attribute) {
+                return i; // 返回列索引
+            }
+        }
+    }
+    return -1; // 未找到，返回 -1
+}
+
+vector<SqlPlan> parseSql(string sql)
+{
+    stringstream ss;
+    vector<string> col_name = {"id", "name", "age", "grade"};
+    //vector<vector<string>>student = {{"id", "name", "age", "grade"},{"A05","Alice","16","80"},{"A12","Bob","18","98"},{"A03","Eve","18","92"}};
+
+    string s = "select sum(grade) from student";             //测试语句
+    // string s = "SELECT id FROM student WHERE name = 'Bob'";
+
+    vector<SqlPlan> plans;
+    if(isSelectType(sql))        //如果是简单查询
+    {
+        //cout << "所在的列是" << parseWhereConditionColIndex(sql,col_name) << endl;           //where子句后的内容所在的列
+        ss << "student,"<< parseWhereConditionColIndex(s,col_name) << ",Alice";
+        string p1 = ss.str();
+        vector<string> actual_p1 = {p1};
+        ss.str("");
+        SqlPlan pl1("select",actual_p1);
+        plans.push_back(pl1);
+
+        //cout << "所在的列是" << parseSelectAttributeColIndex(sql,col_name) << endl;           //select后的内容所在的列
+        ss << parseSelectAttributeColIndex(sql,col_name) << endl;
+        string p2 = ss.str();
+        vector<string> actual_p2 = {p2};
+        ss.str("");
+        SqlPlan pl2("projection",actual_p2);
+        plans.push_back(pl2);
+
+    }
+
+
+    if(isAggregationType(s))     //如果是包含聚合函数的查询
+    {
+        //cout << parseSumAttributeColIndex(sql,col_name) << endl;
+        ss << parseSumAttributeColIndex(sql,col_name) << endl;
+        string p3 = ss.str();
+        vector<string> actual_p3 = {p3};
+        ss.str("");
+        SqlPlan pl3("sum",actual_p3);
+        plans.push_back(pl3);
+    }
+    return plans;
+
+}
+
