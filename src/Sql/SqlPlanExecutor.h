@@ -6,7 +6,7 @@
 #define SQLPLANEXECUTOR_H
 #include <libpq-fe.h>
 #include <vector>
-
+#include <string>
 
 class SqlPlan;
 /**

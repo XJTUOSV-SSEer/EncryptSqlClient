@@ -6,12 +6,18 @@
 #ifndef ENCRYPTUTIL_H
 #define ENCRYPTUTIL_H
 #include <iosfwd>
-#include <seal/secretkey.h>
-
-#endif //ENCRYPTUTIL_H
-
-#include<iostream>
+#include <bitset>
+#include <iostream>
 #include <vector>
+#include <fstream>
+#include <iomanip>
+#include <random>
+#include <sstream>
+#include <seal/seal.h>
+#include <seal/secretkey.h>
+#include "Crypto_Primitives.h"
+
+
 using namespace std;
 
 /**
@@ -78,3 +84,5 @@ void create_save_keys_to_file();
 int find_first_of(const string& str, const string& substr);
 
 seal::EncryptionParameters getEncryptionParameters(seal::EncryptionParameters parameters);
+
+#endif //ENCRYPTUTIL_H

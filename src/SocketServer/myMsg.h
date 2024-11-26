@@ -12,16 +12,16 @@ using namespace std;
 
 enum class msgType : int
 {
-    ERROR        = 0,
-    CONNECTION_REQUEST       = 1,
-    CONNECTION_SUCCESS     = 2,
-    CONNECTION_FAILED      = 3,
-    FILE_REQUEST        = 4,
-    FILE_RECEIVE_SUCCESS     = 5,
-    FILE_RECEIVE_FAILED      = 6,
-    SQL_REQUEST         = 7,
-    SQL_SUCCESS      = 8,
-    SQL_FAILED       = 9,
+    NONE                   = 0,
+    CONNECTION_REQUEST      = 1,
+    CONNECTION_SUCCESS      = 2,
+    CONNECTION_FAILED       = 3,
+    FILE_REQUEST            = 4,
+    FILE_RECEIVE_SUCCESS    = 5,
+    FILE_RECEIVE_FAILED     = 6,
+    SQL_REQUEST             = 7,
+    SQL_SUCCESS             = 8,
+    SQL_FAILED              = 9,
 };
 
 
@@ -56,7 +56,7 @@ public:
         std::istringstream iss(str);
         myMsg message;
         if(str[0] == 0) {
-            message.setmsgType(msgType::ERROR);
+            message.setmsgType(msgType::NONE);
             return message;
         }
         std::string typepart(str,0,4);

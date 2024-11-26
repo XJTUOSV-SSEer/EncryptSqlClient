@@ -1,9 +1,5 @@
 #include "msgSocket.h"
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include "../DataMapper.h"
 
-#include "../EncryptService.h"
 void * thread_func(void* arg){
 
     EncryptionParameters parms(scheme_type::bfv);
@@ -21,7 +17,7 @@ void * thread_func(void* arg){
     int serversocket = args->serverSocket, msgsocket = args->acceptSocket;
     while(1){
         // 初始化并接受msg
-        myMsg msg(msgType::ERROR);
+        myMsg msg(msgType::NONE);
         int ret = recvMsg(msgsocket,msg);
         if(ret < 0){
             close(msgsocket);
@@ -94,7 +90,7 @@ void * thread_func(void* arg){
 
             //// TODO 2 加密数据库查询
             vector<vector<string>> sqlresult = service.excuteSql(sqlquery);
-            bool hasResult = sqlresult.empty();
+            bool hasResult = !sqlresult.empty();
             if(hasResult){
                 myMsg msg2(msgType::SQL_SUCCESS);
                 sendMsg(msgsocket,msg2);
@@ -120,14 +116,14 @@ void * thread_func(void* arg){
         else{
             printf("Warning: a illegal message(msgType::ERROR)\n");
             std::cout<< "Warning: a illegal message("<< type <<")\n";
-            myMsg msg2(msgType::ERROR);
+            myMsg msg2(msgType::NONE);
             sendMsg(msgsocket,msg2);
         }
     }
 }
 
 int recvMsg(int socket,myMsg &msg){
-    msg.setmsgType(msgType::ERROR);
+    msg.setmsgType(msgType::NONE);
     msg.setmsgContent("");
     char buffer[bufSize + 1] = {'\0'};
     int result = -1;
@@ -135,7 +131,7 @@ int recvMsg(int socket,myMsg &msg){
         result = recv(socket, buffer, bufSize, 0);
         if (result > 0) {
             msg = myMsg::fromString(buffer);
-            if(msg.getmsgType() == msgType::ERROR) {
+            if(msg.getmsgType() == msgType::NONE) {
                 std::cerr << "Recive empty message\n";
                 result = -1;
                 return result;
@@ -232,10 +228,19 @@ bool recvFile(int filesocket,std::string fileName,int filesize)
     }
 }
 
-bool sqlQuery(string sqlquery, vector<vector<string>> &sqlresult){
-    return true;
-}
-bool sendSqlResult(int sqlsocket,vector<vector<string>> &sqlresult){
-
+bool sendSqlResult(int sqlSocket,vector<vector<string>> &sqlResult){
+    int sendlen = 0,sendcnt = 0;
+    for (const auto& row : sqlResult) {
+        string str = "";
+        for (size_t i = 0; i < row.size(); ++i) {
+            str += row[i];
+            if (i < row.size() - 1) {
+                str += ","; // 列之间用逗号隔开
+            }
+        }
+        sendlen = send(sqlSocket, str.c_str(), str.size(), 0);
+        sendcnt += sendlen;
+    }
+    shutdown(sqlSocket,SHUT_WR);
     return true;
 }

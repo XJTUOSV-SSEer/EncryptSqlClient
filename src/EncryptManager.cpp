@@ -7,6 +7,7 @@
 #include "main.h"
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
+#include "string"
 
 EncryptManager::EncryptManager() {
     this->key_1 = DATA_KEY_1;
@@ -210,7 +211,7 @@ string prfFunctionReturnString(const string& full_index,bool return_hex) {
 int prfFunctionReturnUnsignedChar(const string& full_index,unsigned char* encrypted_key) {
     string str_key = DATA_KEY_1;
     int key_size = full_index.size();
-    auto* full_index_unsigned_char = new unsigned char[full_index.size()];
+    auto* full_index_unsigned_char = new unsigned char[full_index.size()+16];
     auto *key = new unsigned char[str_key.size()];
 
     StringToUchar(full_index, full_index_unsigned_char);

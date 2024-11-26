@@ -1,7 +1,7 @@
 #include "myMsg.h"
 
 myMsg::myMsg() {
-    this->mtype = msgType::ERROR;
+    this->mtype = msgType::NONE;
     this->msgContent = "\0";
 }
 
@@ -33,7 +33,7 @@ void myMsg:: setmsgContent(std::string mcontent){
 
 std::ostream& operator<<(std::ostream& os, msgType type) {
     switch (type) {
-        case msgType::ERROR: os << "msgType::ERROR"; break;
+        case msgType::NONE: os << "msgType::NONE"; break;
         case msgType::CONNECTION_REQUEST: os << "msgType::CONNECTION_REQUEST"; break;
         case msgType::CONNECTION_SUCCESS: os << "msgType::CONNECTION_SUCCESS"; break;
         case msgType::CONNECTION_FAILED: os << "msgType::CONNECTION_FAILED"; break;

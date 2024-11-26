@@ -1,9 +1,9 @@
-#include <iostream>
-#include <string>
-#include <regex>
-#include <map>
 #include <algorithm>
-
+#include <iostream>
+#include <map>
+#include <regex>
+#include <string>
+#include "../EncryptManager.h"
 #include "../dataObject/dataObject.h"
 using namespace std;
 
@@ -72,6 +72,22 @@ int parseWhereConditionColIndex(const string& sqlQuery, const vector<string>& ta
     return -1; // 未找到匹配的列，返回 -1
 }
 
+string parseWhereCondition(const string& sqlQuery) {
+    // 修改正则表达式以匹配带单引号的值
+    regex whereRegex(R"(WHERE\s+(\w+)\s*=\s*'(\w+)')", regex::icase);
+    smatch match;
+
+    if (regex_search(sqlQuery, match, whereRegex)) {
+        string field = match[1];    // 提取字段名
+        string value = match[2];    // 提取字段值（去除单引号）
+        return value;
+
+    }
+
+    return ""; // 未找到匹配的列，返回 -1
+}
+
+
 // 解析普通 SELECT 查询的属性并返回所在的列索引
 int parseSelectAttributeColIndex(const string& sqlQuery, const vector<string>& table) {
     regex selectRegex(R"(SELECT\s+(\w+)\s+FROM)", regex::icase);
@@ -108,28 +124,29 @@ int parseSumAttributeColIndex(const string& sqlQuery, const vector<string>& tabl
     return -1; // 未找到，返回 -1
 }
 
-vector<SqlPlan> parseSql(string sql)
+vector<SqlPlan> parseSql(string sql,Table tableinfo)
 {
     stringstream ss;
-    vector<string> col_name = {"id", "name", "age", "grade"};
     //vector<vector<string>>student = {{"id", "name", "age", "grade"},{"A05","Alice","16","80"},{"A12","Bob","18","98"},{"A03","Eve","18","92"}};
-
-    string s = "select sum(grade) from student";             //测试语句
+    vector<string> col_name = tableinfo.get_columns();
+    //测试语句
     // string s = "SELECT id FROM student WHERE name = 'Bob'";
 
     vector<SqlPlan> plans;
     if(isSelectType(sql))        //如果是简单查询
     {
         //cout << "所在的列是" << parseWhereConditionColIndex(sql,col_name) << endl;           //where子句后的内容所在的列
-        ss << "student,"<< parseWhereConditionColIndex(s,col_name) << ",Alice";
+        ss << tableinfo.get_name() <<","
+           << parseWhereConditionColIndex(sql,col_name) << ","
+           << parseWhereCondition(sql);
         string p1 = ss.str();
-        vector<string> actual_p1 = {p1};
+        vector<string> actual_p1 = {prfFunctionReturnString(p1, true)};
         ss.str("");
         SqlPlan pl1("select",actual_p1);
         plans.push_back(pl1);
 
         //cout << "所在的列是" << parseSelectAttributeColIndex(sql,col_name) << endl;           //select后的内容所在的列
-        ss << parseSelectAttributeColIndex(sql,col_name) << endl;
+        ss << parseSelectAttributeColIndex(sql,col_name);
         string p2 = ss.str();
         vector<string> actual_p2 = {p2};
         ss.str("");
@@ -139,16 +156,16 @@ vector<SqlPlan> parseSql(string sql)
     }
 
 
-    if(isAggregationType(s))     //如果是包含聚合函数的查询
-    {
-        //cout << parseSumAttributeColIndex(sql,col_name) << endl;
-        ss << parseSumAttributeColIndex(sql,col_name) << endl;
-        string p3 = ss.str();
-        vector<string> actual_p3 = {p3};
-        ss.str("");
-        SqlPlan pl3("sum",actual_p3);
-        plans.push_back(pl3);
-    }
+    //if(isAggregationType(s))     //如果是包含聚合函数的查询
+    //{
+    //    //cout << parseSumAttributeColIndex(sql,col_name) << endl;
+    //    ss << parseSumAttributeColIndex(sql,col_name) << endl;
+    //    string p3 = ss.str();
+    //    vector<string> actual_p3 = {p3};
+    //    ss.str("");
+    //    SqlPlan pl3("sum",actual_p3);
+    //    plans.push_back(pl3);
+    //}
     return plans;
 
 }

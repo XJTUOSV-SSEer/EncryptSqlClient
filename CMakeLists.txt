@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.29)
 if(DEFINED ENV{VCPKG_ROOT})
     set(VCPKG_ROOT "$ENV{VCPKG_ROOT}" CACHE PATH "") # 从环境变量中读取vcpkg根目录
 else()
-    set(VCPKG_ROOT "/Users/chenzhiting/.vcpkg-clion/vcpkg" CACHE PATH "")
+    set(VCPKG_ROOT "/home/syf/vcpkg" CACHE PATH "")
 endif ()
 
 message("set VCPKG_ROOT: ${VCPKG_ROOT}")
@@ -50,6 +50,7 @@ add_executable(EncryptSqlClient src/main.cpp
         src/SocketServer/myMsg.cpp
         src/paser/paser.cpp
         src/paser/paser.h
+        src/dataObject/Table.cpp
 )
 
 find_package(PostgreSQL REQUIRED)

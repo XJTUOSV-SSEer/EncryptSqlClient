@@ -3,14 +3,23 @@
 //
 
 #include "Table.h"
+
+#include <utility>
+Table::Table() = default;
 void Table::set_table(vector<vector<string>> table){
-    this->table = table;
+    this->table = std::move(table);
 }
 void Table::set_columns(vector<string> columns){
-    this->columns = columns;
+    this->columns = std::move(columns);
 }
 void Table::set_columns_type(vector<string> columns_type){
-    this->columns_type = columns_type;
+    this->columns_type = std::move(columns_type);
+}
+void Table::set_name(std::string name) {
+    this->name = std::move(name);
+}
+string Table::get_name() {
+        return this->name;
 }
 vector<vector<string>> Table::get_table(){
     return this->table;

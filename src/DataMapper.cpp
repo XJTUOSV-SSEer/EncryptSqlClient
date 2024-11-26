@@ -325,11 +325,10 @@ Table DataMapper::fileReader(const string& fileName,bool is_first_name_and_secon
         else {
             strArray.push_back(lineArray);
         }
+
         count++;
 
     }
-    table.set_columns(strArray[0]);
-    table.set_columns_type(strArray[1]);
     table.set_table(strArray);
     return table;
                         

@@ -2,17 +2,7 @@
 // Created by 陈志庭 on 24-9-21.
 //
 #include "EncryptUtil.h"
-
-#include <fstream>
-
 #include "../main.h"
-
-#include <iomanip>
-#include <random>
-#include <sstream>
-#include <seal/seal.h>
-
-#include "Crypto_Primitives.h"
 using namespace std;
 using namespace seal;
 

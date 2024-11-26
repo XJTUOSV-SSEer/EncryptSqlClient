@@ -5,8 +5,8 @@
 
 #ifndef PASER_H
 #define PASER_H
-#include "../dataObject/dataObject.h""
+#include "../dataObject/dataObject.h"
 
 
-vector<SqlPlan> parseSql(string sql);
+vector<SqlPlan> parseSql(string sql,Table tableinfo);
 #endif //PASER_H

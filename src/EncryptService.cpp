@@ -19,7 +19,7 @@ void EncryptService::setConn(PGconn *conn) {
 }
 vector<vector<string>> EncryptService::excuteSql(string sql){
     // TODO 1
-    vector<SqlPlan> plans = parseSql(sql);
+    vector<SqlPlan> plans = parseSql(sql,this->currentTable);
     SqlPlanExecutor sql_plan_executor(conn,plans);
     sql_plan_executor.execute();
     // TODO 2 完成错误类
@@ -31,5 +31,9 @@ vector<vector<string>> EncryptService::excuteSql(string sql){
 
 void EncryptService::updateFileIntoSql(const string &fileName) {
     Table table = DataMapper::fileReader(fileName,true);
-    dataMapper.generateEmmIntoSql(conn,0,table.get_table(),table.get_columns_type());
+    int name_final_idx = fileName.find_first_of(".");
+    string table_name = fileName.substr(0,name_final_idx);
+    table.set_name(table_name);
+    this->currentTable = table;
+    dataMapper.generateEmmIntoSql(conn,table_name,table.get_table(),table.get_columns_type());
 }

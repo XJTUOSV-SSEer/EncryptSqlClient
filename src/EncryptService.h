@@ -14,7 +14,7 @@ private:
     DataMapper dataMapper;
     vector<SqlPlan> currentPlan;
     PGconn *conn;
-
+    Table currentTable;
 public:
 
     explicit EncryptService(EncryptionParameters &params);

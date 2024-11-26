@@ -10,15 +10,16 @@
 #include <libpq-fe.h>
 #include <unistd.h>
 #include <iostream>
+#include <vector>
+#include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <vector>
-
-#include <unistd.h>
 #include <sys/signal.h>
 #include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include "../DataMapper.h"
+#include "../EncryptService.h"
 
 using namespace std;
 
