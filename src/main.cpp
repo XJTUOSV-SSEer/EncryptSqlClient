@@ -367,12 +367,12 @@ bool testPlanExcutor(PGconn *conn) {
     vector<string> types0 = {"string","string","string","int"};
     vector<string> types1 = {"string","string"};
 
-    vector<vector<string>> table0 = DataMapper::fileReader(data_src0);
-    vector<vector<string>> table1 = DataMapper::fileReader(data_src1);
+    Table table0 = DataMapper::fileReader(data_src0);
+    Table table1 = DataMapper::fileReader(data_src1);
 
-    data_mapper.generateEmmIntoSql(conn,0,table0,types0);
-    data_mapper.generateEmmIntoSql(conn,1,table1,types1);
-    data_mapper.generateJoinEmmIntoSql(conn,1,0,table1,table0,0,2);
+    data_mapper.generateEmmIntoSql(conn,0,table0.get_table(),types0);
+    data_mapper.generateEmmIntoSql(conn,1,table0.get_table(),types1);
+    data_mapper.generateJoinEmmIntoSql(conn,1,0,table1.get_table(),table0.get_table(),0,2);
 
     vector<SqlPlan> plans;
 
@@ -444,7 +444,7 @@ void testSocketRecv() {
 int main() {
     string conninfo = PGSQL_CONNINFO_remote;
     PGconn *conn = PQconnectdb(conninfo.c_str());
-
+    testSocketRecv();
     //testPlanExcutor(conn);
 
     return 0;

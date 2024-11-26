@@ -17,10 +17,13 @@ private:
     vector<string> columns_type;
 public:
     Table();
-    void read_table(string file_name,bool is_firstline_header);
-    void write_table(string file_name);
+    void set_table(vector<vector<string>> table);
     void set_columns(vector<string> columns);
-    void set_column_type(string column_type);
+    void set_columns_type(vector<string> columns_type);
+    vector<vector<string>> get_table();
+    vector<string> get_columns();
+    vector<string> get_columns_type();
+
 
 };
 

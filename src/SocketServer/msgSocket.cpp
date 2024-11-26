@@ -1,8 +1,10 @@
 #include "msgSocket.h"
-#include "../DataMapper.h"
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
-void* thread_func(void* arg){
+#include "../DataMapper.h"
+
+#include "../EncryptService.h"
+void * thread_func(void* arg){
 
     EncryptionParameters parms(scheme_type::bfv);
 
@@ -11,9 +13,8 @@ void* thread_func(void* arg){
     parms.set_poly_modulus_degree(poly_modulus_degree);
     parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+    EncryptService service(parms);
 
-    DataMapper data_mapper(parms);
-    PGconn* conn;
     int tableId = 0;
 
     threadArgs *args = (threadArgs *)arg;
@@ -31,7 +32,7 @@ void* thread_func(void* arg){
         // 连接数据库
          if(type==msgType::CONNECTION_REQUEST){
             std::string conninfo = msg.getmsgContent();
-            conn= PQconnectdb(conninfo.c_str());
+            PGconn *conn= PQconnectdb(conninfo.c_str());
             // 连接成功
             if (PQstatus(conn) != CONNECTION_OK) {
                 std::cerr << "Failed to connect to database: " << PQerrorMessage(conn) << std::endl;
@@ -46,6 +47,7 @@ void* thread_func(void* arg){
                 sendMsg(msgsocket,msg2);
                 std::cout << "Succeeded to connect to database\n";
             }
+             service.setConn(conn);
         }
         // 上传文件
         else if(type==msgType::FILE_REQUEST){
@@ -76,9 +78,7 @@ void* thread_func(void* arg){
                 }
                 // 加密数据并上传到数据库
                 ////TODO 1 实现数据上传。
-                vector<string> column_type = {"string"};
-                vector<vector<string>> table = data_mapper.fileReader(filename);
-                data_mapper.generateEmmIntoSql(conn,tableId++,table,column_type);
+                 service.updateFileIntoSql(filename);
                 // 尝试删除文件
                 if (remove(filename.c_str()) != 0) {
                     printf("Failed to delete file.\n");
@@ -91,9 +91,10 @@ void* thread_func(void* arg){
         else if(type==msgType::SQL_REQUEST){
             string sqlquery = msg.getmsgContent();
             // 查询加密数据库，查询是否成功
-            vector<vector<string>> sqlresult;
+
             //// TODO 2 加密数据库查询
-            bool hasResult = sqlQuery(sqlquery,sqlresult);
+            vector<vector<string>> sqlresult = service.excuteSql(sqlquery);
+            bool hasResult = sqlresult.empty();
             if(hasResult){
                 myMsg msg2(msgType::SQL_SUCCESS);
                 sendMsg(msgsocket,msg2);

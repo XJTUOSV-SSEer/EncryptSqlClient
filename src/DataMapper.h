@@ -17,8 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "dataObject/EncryptedMultiMap.h"
-#include "dataObject/RowMultiMap.h"
+#include "dataObject/dataObject.h"
 using namespace std;
 using namespace seal;
 
@@ -55,7 +54,7 @@ public:
      * @param fileName
      * @return
      */
-    static vector<vector<string>> fileReader( const string& fileName);
+    static Table fileReader( const string& fileName,bool is_first_name_and_second_type = false);
     SecretKey getSecretKey();
     PublicKey getPublicKey();
     SEALContext context;

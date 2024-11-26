@@ -15,7 +15,7 @@
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
 
-#include "dataObject/RowMultiMap.h"
+#include "dataObject/dataObject.h"
 #include "main.h"
 #include "seal/seal.h"
 using namespace std;
@@ -299,23 +299,39 @@ vector<vector<string>> DataMapper::rowMapperDecrypt(RowMultiMap rmm) {
 
 
 
-vector<vector<string>> DataMapper::fileReader(const string& fileName) {
+Table DataMapper::fileReader(const string& fileName,bool is_first_name_and_second_type) {
+    Table table;
     ifstream inFile;
 	inFile.open(fileName);
     string lineStr;
     vector<vector<string>> strArray;
 	//getline(inFile, lineStr);
+    int count = 0;
     while (getline(inFile, lineStr)) {
-      cout << lineStr << endl;
-      stringstream ss(lineStr);
-      string str;
-      vector<string> lineArray;
-      while (getline(ss, str, ',')){
-  		lineArray.push_back(str);
-  	}
-      strArray.push_back(lineArray);
+          cout << lineStr << endl;
+          stringstream ss(lineStr);
+          string str;
+          vector<string> lineArray;
+          while (getline(ss, str, ',')){
+  	    	lineArray.push_back(str);
+  	    }
+
+        if(count==0 && is_first_name_and_second_type) {
+            table.set_columns(lineArray);
+        }
+        else if(count==1 && is_first_name_and_second_type) {
+            table.set_columns_type(lineArray);
+        }
+        else {
+            strArray.push_back(lineArray);
+        }
+        count++;
+
     }
-    return strArray;
+    table.set_columns(strArray[0]);
+    table.set_columns_type(strArray[1]);
+    table.set_table(strArray);
+    return table;
                         
 }
 void DataMapper::generateEmmIntoSql(PGconn *conn,int tableID, vector<vector<string>> table, vector<string> types) {

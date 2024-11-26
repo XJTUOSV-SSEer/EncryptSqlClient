@@ -6,6 +6,8 @@
 
 
 #include <utility>
+
+#include "Sql/SqlPlanExecutor.h"
 EncryptService::EncryptService(EncryptionParameters &params) : dataMapper(params) {
 
 }
@@ -15,12 +17,19 @@ void EncryptService::insertEncryptedTableToSql(int tableId,vector<vector<string>
 void EncryptService::setConn(PGconn *conn) {
     this->conn = conn;
 }
- void EncryptService::excuteSql(string sql){
+vector<vector<string>> EncryptService::excuteSql(string sql){
     // TODO 1
-    // vector<SqlPlan> plans = parseSql(sql)
-    // SqlPlanExecutor sql_plan_executor(conn,plans);
-    // sql_plan_executor.execute();
+    vector<SqlPlan> plans = parseSql(sql);
+    SqlPlanExecutor sql_plan_executor(conn,plans);
+    sql_plan_executor.execute();
     // TODO 2 完成错误类
     // Result res;
-    // vector<vector<string>> sql_plan_executor.getResults();
+    vector<vector<string>> res = sql_plan_executor.getResults();
+
+    return res;
+}
+
+void EncryptService::updateFileIntoSql(const string &fileName) {
+    Table table = DataMapper::fileReader(fileName,true);
+    dataMapper.generateEmmIntoSql(conn,0,table.get_table(),table.get_columns_type());
 }

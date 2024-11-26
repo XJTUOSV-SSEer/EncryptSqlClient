@@ -48,6 +48,8 @@ add_executable(EncryptSqlClient src/main.cpp
         src/common/result/result.h
         src/SocketServer/msgSocket.cpp
         src/SocketServer/myMsg.cpp
+        src/paser/paser.cpp
+        src/paser/paser.h
 )
 
 find_package(PostgreSQL REQUIRED)
@@ -59,6 +61,8 @@ target_link_libraries(EncryptSqlClient PRIVATE SEAL::seal)
 find_package(OpenSSL REQUIRED)
 target_link_libraries(EncryptSqlClient PRIVATE OpenSSL::SSL)
 target_link_libraries(EncryptSqlClient PRIVATE OpenSSL::Crypto)
+find_package(Drogon CONFIG REQUIRED)
+target_link_libraries(EncryptSqlClient PRIVATE Drogon::Drogon)
 #target_link_libraries(EncryptSqlClient /opt/homebrew/Cellar/openssl@3/3.3.2/lib/libssl.3.dylib /opt/homebrew/Cellar/openssl@3/3.3.2/lib/libcrypto.dylib)
 #target_link_libraries(EncryptSqlClient /usr/local/mysql-connector-c++-9.0.0/lib64/libmysqlcppconn.10.dylib)
 #target_link_libraries(EncryptSqlClient /usr/local/pgsql/lib/libpq.5.14.dylib)
