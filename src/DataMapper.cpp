@@ -263,7 +263,6 @@ Table DataMapper::fileReader(const string& fileName,bool is_first_name_and_secon
         else {
             strArray.push_back(lineArray);
         }
-
         count++;
 
     }
@@ -300,9 +299,10 @@ void DataMapper::generateEmmIntoSql(PGconn *conn,string table_name, vector<vecto
     //cout << "从数据源中读入数据:"<< data_src << endl;
     //vector<vector<string>> tables = data_mapper.fileReader(data_src);
     // 建立 mm，默认表号为 0
+    RowMultiMap mmv = valueMultiMapConstruct(table_name,table,types);
     RowMultiMap mmr = rowMultiMapConstruct(table_name,table,types);
     RowMultiMap mmc = colMultiMapConstruct(table_name,table,types);
-    RowMultiMap mmv = valueMultiMapConstruct(table_name,table,types);
+
 
     EncryptedMultiMap emmr = EncryptManager::setupPerRow(mmr,false);
     EncryptedMultiMap emmv = EncryptManager::setupPerRow(mmv,false);

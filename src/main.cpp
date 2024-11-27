@@ -457,19 +457,16 @@ void testSql() {
     EncryptService encrypt_service(parms);
     encrypt_service.setConn(conn);
 
-    Table table = DataMapper::fileReader("../Resource/data/table0.csv");
-    table.set_name("student");
-    table.set_columns(vector<string>{"ID","Name","Course","Score"});
-    table.set_columns_type(vector<string>{"string","string","string","int"});
+    Table table = DataMapper::fileReader("../Resource/data/people.csv",true);
+    table.set_name("people");
     encrypt_service.uploadTableIntoSql(table);
-
-    vector<vector<string>> res = encrypt_service.executeSql("SELECT SUM(Score) FROM student;");
-    cout << res[0][0] << endl;
+   //vector<vector<string>> res = encrypt_service.executeSql("SELECT ID FROM student WHERE Name = 'Alice';");
+   //cout << res[0][0] << endl;
 }
 
 int main() {
     testSql();
-    string tmp = prfFunctionReturnString("012345678,123456",true);
-    cout << tmp << endl;
+    //std::string hex = prfFunctionReturnString("people,1,aaaomksqh");
+    //cout << hex << endl;
     return 0;
 }

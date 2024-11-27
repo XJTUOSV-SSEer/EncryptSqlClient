@@ -153,11 +153,13 @@ string prfFunctionReturnString(const string& full_index,bool return_hex) {
     int key_size = full_index.size();
     int enc_key_size = full_index.size();
     if(key_size %16!=0) {
-        enc_key_size = key_size / 16 + 16;
+        enc_key_size = enc_key_size - key_size / 16 + 16;
+    }
+    if( full_index=="people,1,aaaomksqh") {
+        printf("stop here!\n");
     }
 
-
-    auto* encrypted_key = new unsigned char[enc_key_size];
+    auto* encrypted_key = new unsigned char[enc_key_size + 2];
     auto* full_index_unsigned_char = new unsigned char[full_index.size()];
     auto *key = new unsigned char[str_key.size()];
 
@@ -165,14 +167,14 @@ string prfFunctionReturnString(const string& full_index,bool return_hex) {
     StringToUchar(str_key,key);
 
     string::size_type key_len = Crypto_Primitives::get_prf(key,full_index_unsigned_char,key_size,encrypted_key);
-
+    string res = unsignedCharArrayToHexString(encrypted_key,key_len);
+    delete[] encrypted_key;
     delete[] full_index_unsigned_char;
     delete[] key;
-    if(return_hex) {
-        return unsignedCharArrayToHexString(encrypted_key,key_len);
-    }
 
-    return {reinterpret_cast<const char*>(encrypted_key), key_len};
+
+    //return {reinterpret_cast<const char*>(encrypted_key), key_len};
+    return res;
 }
 
 int prfFunctionReturnUnsignedChar(const string& full_index,unsigned char* encrypted_key) {
