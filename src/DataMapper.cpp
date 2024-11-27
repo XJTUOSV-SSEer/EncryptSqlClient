@@ -299,14 +299,35 @@ void DataMapper::generateEmmIntoSql(PGconn *conn,string table_name, vector<vecto
     //cout << "从数据源中读入数据:"<< data_src << endl;
     //vector<vector<string>> tables = data_mapper.fileReader(data_src);
     // 建立 mm，默认表号为 0
+    auto now = std::chrono::system_clock::now();
     RowMultiMap mmv = valueMultiMapConstruct(table_name,table,types);
+    auto now2 = std::chrono::system_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now2 - now);
+    cout << "mmv的构建时间是：" <<duration.count() << endl;
+    auto now3 = std::chrono::system_clock::now();
     RowMultiMap mmr = rowMultiMapConstruct(table_name,table,types);
+    auto now4 = std::chrono::system_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(now4 - now3);
+    cout << "mmr的构建时间是："<< duration.count() << endl;
+
     RowMultiMap mmc = colMultiMapConstruct(table_name,table,types);
 
 
+    auto now5 = std::chrono::system_clock::now();
     EncryptedMultiMap emmr = EncryptManager::setupPerRow(mmr,false);
+    auto now6 = std::chrono::system_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(now6 - now5);
+    cout << "emmr的构建时间是：" <<duration.count() << endl;
+    auto now7 = std::chrono::system_clock::now();
     EncryptedMultiMap emmv = EncryptManager::setupPerRow(mmv,false);
+    auto now8 = std::chrono::system_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(now8 - now7);
+    cout << "emmv的构建时间是："<< duration.count() << endl;
+    auto now9 = std::chrono::system_clock::now();
     EncryptedMultiMap emmc = EncryptManager::setupPerRow(mmc,false);
+    auto now10 = std::chrono::system_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(now10 - now9);
+    cout << "emmc的构建时间是："<< duration.count() << endl;
 
 
     //准备执行插入

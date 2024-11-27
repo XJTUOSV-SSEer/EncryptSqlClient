@@ -137,8 +137,6 @@ EncryptedMultiMap EncryptManager::setupPerRow(RowMultiMap mm,bool value_to_hex) 
             string enc_kwi_hex = getHashEncryption(key_with_index,true);
             encr_multi_map.insert(enc_kwi_hex,mm.get(ori_key)[i]);
 
-
-
         }
 
     }
