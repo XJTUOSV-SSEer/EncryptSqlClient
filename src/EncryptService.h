@@ -10,11 +10,12 @@
 
 
 class SqlPlan;class EncryptService {
-private:
+
     DataMapper dataMapper;
     vector<SqlPlan> currentPlan;
     PGconn *conn;
     Table currentTable;
+    map<string,Table> tableMap;
 public:
 
     explicit EncryptService(EncryptionParameters &params);
