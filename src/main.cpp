@@ -438,14 +438,14 @@ void testSocket() {
     }
 }
 
-int main() {
+void testSql() {
     EncryptionParameters parms(scheme_type::bfv);
     PGconn *conn = PQconnectdb(PGSQL_CONNINFO.c_str());
     //检查连接状态
     if (PQstatus(conn) != CONNECTION_OK) {
         std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
         PQfinish(conn);
-        return 0;
+        return;
     } else {
         std::cout << "已成功连接到数据库！\n";
     }
@@ -461,10 +461,15 @@ int main() {
     table.set_name("student");
     table.set_columns(vector<string>{"ID","Name","Course","Score"});
     table.set_columns_type(vector<string>{"string","string","string","int"});
-    encrypt_service.updateTableIntoSql(table);
+    encrypt_service.uploadTableIntoSql(table);
 
     vector<vector<string>> res = encrypt_service.executeSql("SELECT SUM(Score) FROM student;");
     cout << res[0][0] << endl;
+}
 
+int main() {
+    testSql();
+    string tmp = prfFunctionReturnString("012345678,123456",true);
+    cout << tmp << endl;
     return 0;
 }

@@ -41,7 +41,7 @@ void EncryptService::updateFileIntoSql(const string &fileName) {
     this->currentTable = table;
     dataMapper.generateEmmIntoSql(conn,table_name,table.get_table(),table.get_columns_type());
 }
-void EncryptService::updateTableIntoSql(Table table){
+void EncryptService::uploadTableIntoSql(Table table){
     this->currentTable = table;
     dataMapper.generateEmmIntoSql(conn,table.get_name(),table.get_table(),table.get_columns_type());
 }

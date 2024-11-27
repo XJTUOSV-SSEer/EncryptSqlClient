@@ -61,7 +61,7 @@ int DataMapper::decryptData(string ciphertext){
 
 
 
-void DataMapper::insertIntoRowBySymmetricEncryption(vector<string> &row, vector<int> &row_text_len,const string& text){
+void DataMapper::insertIntoRowBySymmetricEncryption(vector<string> &row, const string& text){
     string MMType = "row";
     string key =DATA_KEY_1;
     string iv = DATA_IV_1;
@@ -77,45 +77,24 @@ void DataMapper::insertIntoRowBySymmetricEncryption(vector<string> &row, vector<
     //string cipherStr = UcharToString(ciphertext,cipertext_len);
 
     row.push_back(cipher_text);
-    row_text_len.push_back(ciphertext_len);
+
 
 }
-void DataMapper::insertIntoRowByPrfEncryption(vector<string> &row, vector<int> &row_text_len,const string& text){
+void DataMapper::insertIntoRowByPrfEncryption(vector<string> &row, const string& text) {
     string MMType = "row";
     string key =DATA_KEY_1;
     string iv = DATA_IV_1;
 
-    int padLength = text.size();
-    if(text.size() % 16 != 0) {
-        padLength = text.size()-text.size() % 16 +16;
-    }
-
-
-    auto* plain_text = new unsigned char[padLength];
-    auto* ciphertext = new unsigned char[padLength + 16];
-    auto* key_uc = new unsigned char[key.size()];
-    auto* iv_uc = new unsigned char[iv.size()];
-
-    StringToUchar(key,key_uc);
-    StringToUchar(iv,iv_uc);
-    //StringToUchar(text,plain_text);
 
     // 利用 prf 生成 F(index)
-    unsigned char* enc_idx = new unsigned char[padLength];
-    int cipertext_len = prfFunctionReturnUnsignedChar(text, enc_idx);
-    string cipherStr = unsignedCharArrayToHexString(enc_idx, cipertext_len);
+    string cipherStr = prfFunctionReturnString(text,true);
 
     //string cipherStr = UcharToString(enc_idx,cipertext_len);
 
     row.push_back(cipherStr);
-    row_text_len.push_back(cipertext_len);
-
-    delete[] plain_text;
-    delete[] key_uc;
-    delete[] iv_uc;
 }
 
-void DataMapper::insertIntoRowByHomomorphicEncryption(vector<string> &row, vector<int> &row_text_len, int value){
+void DataMapper::insertIntoRowByHomomorphicEncryption(vector<string> &row, int value){
     stringstream ss;
     string viewPlainText = intToHexString(value);
     Plaintext plaintext(intToHexString(value));
@@ -125,7 +104,6 @@ void DataMapper::insertIntoRowByHomomorphicEncryption(vector<string> &row, vecto
     ciphertext.save(ss);
 
     row.push_back(ss.str());
-    row_text_len.push_back(ss.str().size());
 
     ss.clear();
 }
@@ -143,23 +121,22 @@ RowMultiMap DataMapper::rowMultiMapConstruct(string table_name, vector<vector<st
 		string index = table_name +","+ to_string(row_index);
 	    // 分别用于标识每行数据和对应长度的向量
 	    vector<string> row;
-		vector<int> row_text_len;
         vector<string> row_type;
 		for(col_index = 0; col_index < col_size; col_index++) {
 			string text = inData[row_index][col_index];
 		    string type = mmap.getTypesByColumnsID(col_index);
 
 		    if(type == "string") {
-		        insertIntoRowBySymmetricEncryption(row, row_text_len, text);
+		        insertIntoRowBySymmetricEncryption(row, text);
 
 
             } else if(type == "int") {
-		        insertIntoRowByHomomorphicEncryption(row, row_text_len, stoi(text));
+		        insertIntoRowByHomomorphicEncryption(row, stoi(text));
             }
             row_type.push_back(type);
 
 		}
-		mmap.add(index,row,row_text_len);
+		mmap.add(index,row);
 	}
 	return mmap;
 }
@@ -175,21 +152,20 @@ RowMultiMap DataMapper::colMultiMapConstruct(string table_name, vector<vector<st
         string index = table_name + ","+to_string(col_index);
         // 分别用于标识每列数据和对应长度的向量
         vector<string> col;
-        vector<int> col_text_len;
 
         for(row_index = 0; row_index < row_size; row_index++) {
             string text = inData[row_index][col_index];
             string type = mmap.getTypesByColumnsID(col_index);
 
             if(type == "string") {
-                insertIntoRowBySymmetricEncryption(col, col_text_len, text);
+                insertIntoRowBySymmetricEncryption(col, text);
 
-            } else if(type == "int") {
-                insertIntoRowByHomomorphicEncryption(col, col_text_len, stoi(text));
+            } else if (type == "int") {
+                insertIntoRowByHomomorphicEncryption(col, stoi(text));
             }
 
         }
-        mmap.add(index,col,col_text_len);
+        mmap.add(index,col);
     }
     return mmap;
 }
@@ -209,7 +185,6 @@ RowMultiMap DataMapper::valueMultiMapConstruct(string table_name, vector<vector<
         for(row_index = 0; row_index < row_size; row_index++) {
             // 分别用于标识每列数据和对应长度的向量
             vector<string> row;
-            vector<int> row_text_len;
             string text = inData[row_index][col_index];
 
             ss << table_name << "," << col_index << "," << text;
@@ -220,9 +195,9 @@ RowMultiMap DataMapper::valueMultiMapConstruct(string table_name, vector<vector<
             string valuePlainText = ss.str();
             ss.str("");
 
-            insertIntoRowByPrfEncryption(row,row_text_len,valuePlainText);
+            insertIntoRowByPrfEncryption(row,valuePlainText);
 
-            mmap.add(index,row,row_text_len);
+            mmap.add(index,row);
         }
 
     }
@@ -251,52 +226,15 @@ RowMultiMap DataMapper::joinMultiMapConstruct(string table_name1, string table_n
                 string value = ss.str();
                 ss.str("");
 
-                insertIntoRowByPrfEncryption(row,row_text_len,value);
+                insertIntoRowByPrfEncryption(row,value);
 
-                mmap.add(index,row,row_text_len);
+                mmap.add(index,row);
             }
         }
     }
 
     return mmap;
 }
-vector<vector<string>> DataMapper::rowMapperDecrypt(RowMultiMap rmm) {
-	string enc_key =DATA_KEY_1;
-	string enc_iv =DATA_IV_1;
-
-    auto* enc_key_uc = new unsigned char[enc_key.size()];
-    auto* enc_iv_uc = new unsigned char[enc_iv.size()];
-
-    StringToUchar(enc_key,enc_key_uc);
-    StringToUchar(enc_iv,enc_iv_uc);
-
-	vector<vector<string>> result;
-	vector<string> keys = rmm.getKeys();
-	for(auto key : keys) {
-		vector<string> res_row;
-		vector<string> row = rmm.get(key);
-		vector<int> text_len = rmm.getCipertextLength(key);
-		for(int i=0;i<row.size();i++) {
-			int textlen = text_len[i];
-			string text = row[i];
-			auto* plaintext = new unsigned char[textlen];
-		    auto* ciphertext = new unsigned char[textlen];
-
-            StringToUchar(text,ciphertext);
-
-			Crypto_Primitives::sym_decrypt(ciphertext,textlen,enc_key_uc,enc_iv_uc,plaintext);
-			res_row.push_back(reinterpret_cast<char*>(plaintext));
-
-		    delete[] plaintext;
-		    delete[] ciphertext;
-		}
-		result.push_back(res_row);
-	}
-    delete[] enc_key_uc;
-    delete[] enc_iv_uc;
-	return result;
-}
-
 
 
 Table DataMapper::fileReader(const string& fileName,bool is_first_name_and_second_type) {

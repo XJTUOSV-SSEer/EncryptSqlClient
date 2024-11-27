@@ -20,7 +20,7 @@ public:
     explicit EncryptService(EncryptionParameters &params);
     void setConn(PGconn *conn);
     void updateFileIntoSql(const string &fileName);
-    void updateTableIntoSql(Table table);
+    void uploadTableIntoSql(Table table);
     vector<vector<string>> decryptedResult(vector<vector<string>> res);
     void insertEncryptedTableToSql(int tableId, vector<vector<string>> tables, vector<string> column_types);
     vector<vector<string>>  executeSql(string sql);

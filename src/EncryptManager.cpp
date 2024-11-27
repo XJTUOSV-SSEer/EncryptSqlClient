@@ -42,17 +42,12 @@ EncryptedMultiMap EncryptManager::setup(RowMultiMap mm,map<string,string>&idx2ke
                 enc_key_size = enc_key_size / 16 + 16;
             }
             // 利用 prf 生成 F(index)
-            unsigned char* enc_idx = new unsigned char[enc_key_size];
-            int key_len = prfFunctionReturnUnsignedChar(full_index, enc_idx);
-            string key = unsignedCharArrayToHexString(enc_idx, key_len);
+
+            string key = prfFunctionReturnString(full_index, true);
             // 将 prf 函数生成的结果转为 16进制字符 再级联 对应的坐标，再进行对称加密，也就是 H(F(index) || row_index)
             string key_with_index = key + ',' + to_string(i);
-            string enc_kwi = getSymmetricEncryption(key_with_index);
+            string enc_kwi_hex = getHashEncryption(key_with_index,true);
 
-            unsigned char kwi_char[enc_kwi.size()];
-            StringToUchar(enc_kwi,kwi_char);
-
-            string enc_kwi_hex = unsignedCharArrayToHexString(kwi_char, enc_kwi.size());
 
             // 做一个索引到 key 的映射，方便查找
             idx2key.insert(pair(full_index,key));
@@ -89,17 +84,10 @@ EncryptedMultiMap EncryptManager::setup(RowMultiMap mm,bool value_to_hex) {
                 enc_key_size = enc_key_size / 16 + 16;
             }
             // 利用 prf 生成 F(index)
-            unsigned char* enc_idx = new unsigned char[enc_key_size];
-            int key_len = prfFunctionReturnUnsignedChar(full_index, enc_idx);
-            string key = unsignedCharArrayToHexString(enc_idx, key_len);
+            string key = prfFunctionReturnString(full_index, true);
             // 将 prf 函数生成的结果转为 16进制字符 再级联 对应的坐标，再进行对称加密，也就是 H(F(index) || row_index)
             string key_with_index = key + ',' + to_string(i);
-            string enc_kwi = getSymmetricEncryption(key_with_index);
-
-            unsigned char kwi_char[enc_kwi.size()];
-            StringToUchar(enc_kwi,kwi_char);
-
-            string enc_kwi_hex = unsignedCharArrayToHexString(kwi_char, enc_kwi.size());
+            string enc_kwi_hex = getHashEncryption(key_with_index,true);
 
             // 做一个索引到 key 的映射，方便查找
             //idx2key.insert(pair(full_index,key));
@@ -143,19 +131,10 @@ EncryptedMultiMap EncryptManager::setupPerRow(RowMultiMap mm,bool value_to_hex) 
                 enc_key_size = enc_key_size / 16 + 16;
             }
             // 利用 prf 生成 F(index)
-            unsigned char* enc_idx = new unsigned char[enc_key_size];
-            int key_len = prfFunctionReturnUnsignedChar(full_index, enc_idx);
-            string key = unsignedCharArrayToHexString(enc_idx, key_len);
+            string key = prfFunctionReturnString(full_index, true);
             // 将 prf 函数生成的结果转为 16进制字符 再级联 对应的坐标，再进行对称加密，也就是 H(F(index) || row_index)
             string key_with_index = key + ',' + to_string(i);
-            string enc_kwi = getHashEncryption(key_with_index,false);
-
-
-            //cout << enc_kwi.size() << endl;
-            unsigned char kwi_char[enc_kwi.size()];
-            StringToUchar(enc_kwi,kwi_char);
-
-            string enc_kwi_hex = unsignedCharArrayToHexString(kwi_char, enc_kwi.size());
+            string enc_kwi_hex = getHashEncryption(key_with_index,true);
             encr_multi_map.insert(enc_kwi_hex,mm.get(ori_key)[i]);
 
 
@@ -166,18 +145,6 @@ EncryptedMultiMap EncryptManager::setupPerRow(RowMultiMap mm,bool value_to_hex) 
     return encr_multi_map;
 }
 
-vector<string> EncryptManager::token(const vector<string>& indexes) {
-    vector<string> tokens;
-    tokens.reserve(indexes.size());
-    for(const auto & index : indexes) {
-        tokens.push_back(prfFunctionReturnString(index));
-    }
-    return tokens;
-}
-
-string EncryptManager::token(string index) {
-    return prfFunctionReturnString(std::move(index));
-}
 
 
 
