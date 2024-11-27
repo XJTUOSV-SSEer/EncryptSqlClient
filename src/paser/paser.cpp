@@ -81,9 +81,7 @@ string parseWhereCondition(const string& sqlQuery) {
         string field = match[1];    // 提取字段名
         string value = match[2];    // 提取字段值（去除单引号）
         return value;
-
     }
-
     return ""; // 未找到匹配的列，返回 -1
 }
 
@@ -124,20 +122,37 @@ int parseSumAttributeColIndex(const string& sqlQuery, const vector<string>& tabl
     return -1; // 未找到，返回 -1
 }
 
+
 vector<SqlPlan> parseSql(string sql,Table tableinfo)
 {
     stringstream ss;
-    //vector<vector<string>>student = {{"id", "name", "age", "grade"},{"A05","Alice","16","80"},{"A12","Bob","18","98"},{"A03","Eve","18","92"}};
     vector<string> col_name = tableinfo.get_columns();
+    vector<string> col_types = tableinfo.get_columns_type();
     //测试语句
     // string s = "SELECT id FROM student WHERE name = 'Bob'";
 
     vector<SqlPlan> plans;
-    if(isSelectType(sql))        //如果是简单查询
+    vector<string> res_param;
+    if(isAggregationType(sql))     //如果是包含聚合函数的查询
     {
+        //cout << parseSumAttributeColIndex(sql,col_name) << endl;
+        int colIndex = parseSumAttributeColIndex(sql, col_name);
+
+        res_param.push_back(col_types[colIndex]);
+        ss << tableinfo.get_name()<< "," << colIndex;
+
+        string p3 = ss.str();
+        vector<string> actual_p3 = {prfFunctionReturnString(p3,true)};
+        ss.str("");
+        SqlPlan pl3("sum",actual_p3);
+        plans.push_back(pl3);
+    }
+    else if(isSelectType(sql))        //如果是简单查询
+    {
+        int colIndex1 = parseWhereConditionColIndex(sql, col_name);
         //cout << "所在的列是" << parseWhereConditionColIndex(sql,col_name) << endl;           //where子句后的内容所在的列
         ss << tableinfo.get_name() <<","
-           << parseWhereConditionColIndex(sql,col_name) << ","
+           << colIndex1 << ","
            << parseWhereCondition(sql);
         string p1 = ss.str();
         vector<string> actual_p1 = {prfFunctionReturnString(p1, true)};
@@ -145,8 +160,10 @@ vector<SqlPlan> parseSql(string sql,Table tableinfo)
         SqlPlan pl1("select",actual_p1);
         plans.push_back(pl1);
 
-        //cout << "所在的列是" << parseSelectAttributeColIndex(sql,col_name) << endl;           //select后的内容所在的列
-        ss << parseSelectAttributeColIndex(sql,col_name);
+        //cout << "所在的列是" << parseSelectAttributeColIndex(sql,col_name) << endl;
+        int colIndex2 = parseSelectAttributeColIndex(sql, col_name);//select后的内容所在的列
+        res_param.push_back(col_types[colIndex2]);
+        ss << colIndex2;
         string p2 = ss.str();
         vector<string> actual_p2 = {p2};
         ss.str("");
@@ -155,17 +172,8 @@ vector<SqlPlan> parseSql(string sql,Table tableinfo)
 
     }
 
-
-    //if(isAggregationType(s))     //如果是包含聚合函数的查询
-    //{
-    //    //cout << parseSumAttributeColIndex(sql,col_name) << endl;
-    //    ss << parseSumAttributeColIndex(sql,col_name) << endl;
-    //    string p3 = ss.str();
-    //    vector<string> actual_p3 = {p3};
-    //    ss.str("");
-    //    SqlPlan pl3("sum",actual_p3);
-    //    plans.push_back(pl3);
-    //}
+    SqlPlan resPlan("result",res_param);
+    plans.push_back(resPlan);
     return plans;
 
 }

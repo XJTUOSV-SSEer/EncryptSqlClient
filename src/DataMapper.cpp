@@ -432,9 +432,7 @@ void DataMapper::createTableIfNotExsit(PGconn *conn,string table_name,bool value
        " (enc_key varchar(255) PRIMARY KEY, enc_value varchar(255))";
     }
     const char* query = sqlQuery.c_str();
-    PGresult *res = PQexec(conn, query);
-
-
+    PQexec(conn, query);
 }
 
 void DataMapper::insertIntoSql(const pair<string,string>& kv,string targetTable,PGconn *conn,bool value_is_bytea) {

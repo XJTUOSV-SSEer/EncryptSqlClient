@@ -89,7 +89,8 @@ void * thread_func(void* arg){
             // 查询加密数据库，查询是否成功
 
             //// TODO 2 加密数据库查询
-            vector<vector<string>> sqlresult = service.excuteSql(sqlquery);
+            vector<vector<string>> sqlresult = service.executeSql(sqlquery);
+
             bool hasResult = !sqlresult.empty();
             if(hasResult){
                 myMsg msg2(msgType::SQL_SUCCESS);

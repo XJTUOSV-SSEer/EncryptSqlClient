@@ -411,9 +411,7 @@ using namespace seal;
 //    return true;
 //}
 
-
-
-int main() {
+void testSocket() {
     int serverSock = -1,acceptSock=-1;
     serverSock = create_serverSocket();
     if(serverSock < 0){
@@ -438,7 +436,35 @@ int main() {
         thread_func((void *)&aArg);
         close(acceptSock);
     }
-    close(serverSock);
+}
+
+int main() {
+    EncryptionParameters parms(scheme_type::bfv);
+    PGconn *conn = PQconnectdb(PGSQL_CONNINFO.c_str());
+    //检查连接状态
+    if (PQstatus(conn) != CONNECTION_OK) {
+        std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
+        PQfinish(conn);
+        return 0;
+    } else {
+        std::cout << "已成功连接到数据库！\n";
+    }
+    // 设置 SEAL 参数
+    size_t poly_modulus_degree = 2048;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+    EncryptService encrypt_service(parms);
+    encrypt_service.setConn(conn);
+
+    Table table = DataMapper::fileReader("../Resource/data/table0.csv");
+    table.set_name("student");
+    table.set_columns(vector<string>{"ID","Name","Course","Score"});
+    table.set_columns_type(vector<string>{"string","string","string","int"});
+    encrypt_service.updateTableIntoSql(table);
+
+    vector<vector<string>> res = encrypt_service.executeSql("SELECT SUM(Score) FROM student;");
+    cout << res[0][0] << endl;
 
     return 0;
 }

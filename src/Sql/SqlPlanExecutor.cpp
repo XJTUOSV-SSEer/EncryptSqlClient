@@ -151,14 +151,10 @@ void SqlPlanExecutor::deleteTmp(std::vector<std::string> tmps) {
 }
 
 std::vector<std::vector<std::string>> SqlPlanExecutor::getResults() {
-    for(int i=0;i<results.size();i++){
-        for(int j=0;j<results[0].size();j++){
-            string data = results[i][j];
-            string decrypt_data = decryptSymmetricEncryption(data);
-            results[i][j] = decrypt_data;
-        }
-    }
-
     return results;
+}
+string SqlPlanExecutor::getResType() {
+    SqlPlan resPlan = plans.back();
+    return resPlan.getParams()[0];
 }
 

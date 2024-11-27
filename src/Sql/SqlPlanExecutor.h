@@ -26,7 +26,7 @@ public:
     void setConn(PGconn* conn);
     void setPlans(std::vector<SqlPlan> plans);
     void execute();
-    std::vector<std::vector<std::string>> getResults();
+    std::vector<std::vector<std::string>> getResults();std::string getResType();
 
 };
 
