@@ -29,7 +29,7 @@ void * thread_func(void* arg){
          if(type==msgType::CONNECTION_REQUEST){
             std::string conninfo = msg.getmsgContent();
             PGconn *conn= PQconnectdb(conninfo.c_str());
-            // 连接成功
+            // 连接失败
             if (PQstatus(conn) != CONNECTION_OK) {
                 std::cerr << "Failed to connect to database: " << PQerrorMessage(conn) << std::endl;
                 PQfinish(conn);
@@ -37,7 +37,7 @@ void * thread_func(void* arg){
                 sendMsg(msgsocket,msg2);
                 continue;
             }
-            // 连接失败
+            // 连接成功
             else {
                 myMsg msg2(msgType::CONNECTION_SUCCESS);
                 sendMsg(msgsocket,msg2);
