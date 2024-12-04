@@ -27,8 +27,6 @@ add_executable(EncryptSqlClient src/main.cpp
         src/EncryptTools/Crypto_Primitives.h
         src/EncryptTools/EncryptUtil.cpp
         src/EncryptTools/EncryptUtil.h
-        src/dataObject/EncKey.cpp
-        src/dataObject/EncKey.h
         src/dataObject/EncryptedMultiMap.cpp
         src/dataObject/EncryptedMultiMap.h
         src/dataObject/RowMultiMap.cpp

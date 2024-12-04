@@ -20,10 +20,6 @@ private:
      */
     map<string,string> KVmap;
     /**
-     * 存放每一个值的数据类型，用于区分同态和对称加密
-     */
-    map<string,string> typeMap;
-    /**
      * 维护一个所有 key 也就是索引信息的集合，用于遍历。
      */
     vector<string> keys;
@@ -36,11 +32,6 @@ public:
      * @param value 加密后的数据
      */
     void insert(string key, string value);
-    /**
-     * 从 MM 结构中直接载入数据，待完成
-     * @param rmm MM 结构
-     */
-    void insertFromMM(RowMultiMap rmm);
 
     /**
      * 使用 key 从数据库中得到一个加密数据

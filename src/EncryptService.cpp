@@ -20,7 +20,7 @@ void EncryptService::setConn(PGconn *conn) {
 }
 vector<vector<string>> EncryptService::executeSql(string sql){
     // TODO 1
-    vector<SqlPlan> plans = parseSql(std::move(sql),tableMap);
+    vector<SqlPlan> plans = parseSql(std::move(sql),currentTable);
     this->currentPlan = plans;
     SqlPlanExecutor sql_plan_executor(conn,plans);
     sql_plan_executor.execute();
@@ -33,13 +33,13 @@ vector<vector<string>> EncryptService::executeSql(string sql){
     return res;
 }
 
-void EncryptService::updateFileIntoSql(const string &fileName) {
+void EncryptService::uploadFileIntoSql(const string &fileName) {
     Table table = DataMapper::fileReader(fileName,true);
     int name_final_idx = fileName.find_first_of(".");
     string table_name = fileName.substr(0,name_final_idx);
     table.set_name(table_name);
     this->currentTable = table;
-    this->tableMap[table_name] = table;
+    //this->tableMap[table_name] = table;
     dataMapper.generateEmmIntoSql(conn,table_name,table.get_table(),table.get_columns_type());
 }
 void EncryptService::uploadTableIntoSql(Table table){

@@ -245,7 +245,7 @@ Table DataMapper::fileReader(const string& fileName,bool is_first_name_and_secon
     vector<vector<string>> strArray;
 	//getline(inFile, lineStr);
     int count = 0;
-    while (getline(inFile, lineStr)) {
+    while (safeGetline(inFile, lineStr)) {
           cout << lineStr << endl;
           stringstream ss(lineStr);
           string str;
@@ -282,9 +282,9 @@ void DataMapper::generateEmmIntoSql(PGconn *conn,int tableID, vector<vector<stri
     RowMultiMap mmc = colMultiMapConstruct(to_string(tableID),table,types);
     RowMultiMap mmv = valueMultiMapConstruct(to_string(tableID),table,types);
 
-    EncryptedMultiMap emmr = EncryptManager::setupPerRow(mmr,false);
-    EncryptedMultiMap emmv = EncryptManager::setupPerRow(mmv,false);
-    EncryptedMultiMap emmc = EncryptManager::setupPerRow(mmc,false);
+    EncryptedMultiMap emmr = EncryptManager::setup(mmr);
+    EncryptedMultiMap emmv = EncryptManager::setup(mmv);
+    EncryptedMultiMap emmc = EncryptManager::setup(mmc);
 
 
     //准备执行插入
@@ -314,17 +314,17 @@ void DataMapper::generateEmmIntoSql(PGconn *conn,string table_name, vector<vecto
 
 
     auto now5 = std::chrono::system_clock::now();
-    EncryptedMultiMap emmr = EncryptManager::setupPerRow(mmr,false);
+    EncryptedMultiMap emmr = EncryptManager::setup(mmr);
     auto now6 = std::chrono::system_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(now6 - now5);
     cout << "emmr的构建时间是：" <<duration.count() << endl;
     auto now7 = std::chrono::system_clock::now();
-    EncryptedMultiMap emmv = EncryptManager::setupPerRow(mmv,false);
+    EncryptedMultiMap emmv = EncryptManager::setup(mmv);
     auto now8 = std::chrono::system_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(now8 - now7);
     cout << "emmv的构建时间是："<< duration.count() << endl;
     auto now9 = std::chrono::system_clock::now();
-    EncryptedMultiMap emmc = EncryptManager::setupPerRow(mmc,false);
+    EncryptedMultiMap emmc = EncryptManager::setup(mmc);
     auto now10 = std::chrono::system_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(now10 - now9);
     cout << "emmc的构建时间是："<< duration.count() << endl;
@@ -338,12 +338,12 @@ void DataMapper::generateEmmIntoSql(PGconn *conn,string table_name, vector<vecto
 
 
 void DataMapper::generateJoinEmmIntoSql(PGconn *conn, string table_name1, string table_name2,
-    vector<vector<string>> table1,vector<vector<string>>table2,int joinCol1,int joinCol2) {
+                                        vector<vector<string>> table1,vector<vector<string>>table2,int joinCol1,int joinCol2) {
 
     stringstream ss;
 
     RowMultiMap mmjoin = joinMultiMapConstruct(table_name1,table_name2, table1, table2, joinCol1,joinCol2);
-    EncryptedMultiMap emmjoin = EncryptManager::setupPerRow(mmjoin,false);
+    EncryptedMultiMap emmjoin = EncryptManager::setup(mmjoin);
 
     ss << "mmjoin_" << table_name1<< "_" << joinCol1 << "_join_"
     << table_name2<< "_" << joinCol2;
@@ -351,13 +351,12 @@ void DataMapper::generateJoinEmmIntoSql(PGconn *conn, string table_name1, string
     insertEMM(emmjoin,conn,ss.str(),false);
 }
 
-void DataMapper::generateJoinEmmIntoSql(PGconn *conn, int tableID1, int tableID2,
-    vector<vector<string>> table1,vector<vector<string>>table2,int joinCol1,int joinCol2) {
+void DataMapper::generateJoinEmmIntoSql(PGconn *conn, int tableID1, int tableID2, vector<vector<string>> table1,vector<vector<string>>table2,int joinCol1,int joinCol2) {
 
     stringstream ss;
 
     RowMultiMap mmjoin = joinMultiMapConstruct(to_string(tableID1),to_string(tableID2), table1, table2, joinCol1,joinCol2);
-    EncryptedMultiMap emmjoin = EncryptManager::setupPerRow(mmjoin,false);
+    EncryptedMultiMap emmjoin = EncryptManager::setup(mmjoin);
 
     ss << "mmjoin_" << tableID1<< "_" << joinCol1 << "_join_"
     << tableID2<< "_" << joinCol2;
@@ -460,6 +459,7 @@ void DataMapper::load_keys_from_file(SEALContext &context,
         secret_key.load(context, secret_key_file);
         secret_key_file.close();
     }
+
 
 
 

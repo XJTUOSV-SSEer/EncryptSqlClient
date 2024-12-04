@@ -123,14 +123,16 @@ int parseSumAttributeColIndex(const string& sqlQuery, const vector<string>& tabl
 }
 
 
-vector<SqlPlan> parseSql(string sql,map<string,Table> tables)
+//vector<SqlPlan> parseSql(string sql,map<string,Table> tables)
+
+vector<SqlPlan> parseSql(string sql,Table tableinfo)
 {
     stringstream ss;
-    Table tableinfo;
+    //Table tableinfo;
     //tableinfo["student"].get_columns();
-    for(const auto& it:tables) {
-        tableinfo = it.second;
-    }
+    //for(const auto& it:tables) {
+    //    tableinfo = it.second;
+    //}
     vector<string> col_name = tableinfo.get_columns();
     vector<string> col_types = tableinfo.get_columns_type();
     //测试语句

@@ -74,7 +74,7 @@ void * thread_func(void* arg){
                 }
                 // 加密数据并上传到数据库
                 ////TODO 1 实现数据上传。
-                 service.updateFileIntoSql(filename);
+                 service.uploadFileIntoSql(filename);
                 // 尝试删除文件
                 if (remove(filename.c_str()) != 0) {
                     printf("Failed to delete file.\n");

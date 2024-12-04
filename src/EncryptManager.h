@@ -24,9 +24,9 @@ class EncryptManager {
      * @param value_to_hex
      * @return
      */
-    EncryptedMultiMap setup(RowMultiMap mm, map<string, string> &idx2key,bool value_to_hex);
-    static EncryptedMultiMap setup(RowMultiMap mm, bool value_to_hex);
-    static EncryptedMultiMap setupPerRow(RowMultiMap mm,bool value_to_hex);
+//    EncryptedMultiMap setup(RowMultiMap mm, map<string, string> &idx2key,bool value_to_hex);
+//    static EncryptedMultiMap setup(RowMultiMap mm, bool value_to_hex);
+    static EncryptedMultiMap setup(RowMultiMap mm);
 
     /**
      * 根据索引构建 token，此处是 sigma token。

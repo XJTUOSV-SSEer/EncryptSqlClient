@@ -1,3 +1,5 @@
+ID,Name,Course,Score
+string,string,string,int
 A05,Alice,16,80
 A12,Bob,18,98
 A03,Eve,18,92

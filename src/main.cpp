@@ -10,7 +10,6 @@
 #include "EncryptTools/Crypto_Primitives.h"
 #include "EncryptTools/EncryptUtil.h"
 #include "SocketServer//msgSocket.h"
-#include "dataObject/EncKey.h"
 #include "dataObject/EncryptedMultiMap.h"
 #include "seal/seal.h"
 #include "dataObject/SqlPlan.h"
@@ -307,7 +306,7 @@ using namespace seal;
 //    map<string,string> index_to_keys;
 //
 //    EncryptManager encrypt_manager = EncryptManager();
-//    EncryptedMultiMap emm = encrypt_manager.setupPerRow(mm,false);
+//    EncryptedMultiMap emm = encrypt_manager.setup(mm,false);
 //
 //    Evaluator evaluator(data_mapper.context);
 //
@@ -457,14 +456,15 @@ void testSql() {
     EncryptService encrypt_service(parms);
     encrypt_service.setConn(conn);
 
-    Table table = DataMapper::fileReader("../Resource/data/people.csv",true);
-    table.set_name("people");
+    Table table = DataMapper::fileReader("../Resource/data/table0.csv",true);
+    table.set_name("table0");
     encrypt_service.uploadTableIntoSql(table);
    //vector<vector<string>> res = encrypt_service.executeSql("SELECT ID FROM student WHERE Name = 'Alice';");
    //cout << res[0][0] << endl;
 }
 
 int main() {
+
     testSql();
     //std::string hex = prfFunctionReturnString("people,1,aaaomksqh");
     //cout << hex << endl;

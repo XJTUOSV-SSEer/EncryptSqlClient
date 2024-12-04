@@ -85,4 +85,5 @@ int find_first_of(const string& str, const string& substr);
 
 seal::EncryptionParameters getEncryptionParameters(seal::EncryptionParameters parameters);
 
+std::istream& safeGetline(std::istream& is, std::string& t);
 #endif //ENCRYPTUTIL_H

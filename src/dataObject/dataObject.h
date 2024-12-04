@@ -4,7 +4,6 @@
 
 #ifndef DATAOBJECT_H
 #define DATAOBJECT_H
-#include "EncKey.h"
 #include "EncryptedMultiMap.h"
 #include "RowMultiMap.h"
 #include "SqlPlan.h"

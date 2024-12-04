@@ -8,5 +8,7 @@
 #include "../dataObject/dataObject.h"
 
 
-vector<SqlPlan> parseSql(string sql,map<string,Table> tables);
+//vector<SqlPlan> parseSql(string sql,map<string,Table> tables);
+
+vector<SqlPlan> parseSql(string sql,Table tableInfo);
 #endif //PASER_H
