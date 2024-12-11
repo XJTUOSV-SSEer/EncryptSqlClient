@@ -246,8 +246,12 @@ Table DataMapper::fileReader(const string& fileName,bool is_first_name_and_secon
 	//getline(inFile, lineStr);
     int count = 0;
     while (safeGetline(inFile, lineStr)) {
+        if(lineStr.empty()) {
+            continue;
+        }
           cout << lineStr << endl;
           stringstream ss(lineStr);
+
           string str;
           vector<string> lineArray;
           while (getline(ss, str, ',')){
