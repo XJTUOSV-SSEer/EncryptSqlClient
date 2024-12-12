@@ -74,6 +74,15 @@ string generateProjetcionQueryFromTmpTable(string fromTable, string params,strin
     return ss.str();
 }
 
+string generateProjetcionQueryInSingleColumn(string fromTable, string params,string tmpTable) {
+    stringstream ss;
+    ss << "SELECT " << R"(enc_projection_text(')"
+                    <<  params <<  "\',\'"
+                    << tmpTable << "\')" << ");";
+
+    return ss.str();
+}
+
 string generateSumQuery(string params,string tmpTable) {
     stringstream ss;
     ss << "SELECT " << R"(sum_by_row_to_tmp(')"
