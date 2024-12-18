@@ -15,8 +15,6 @@
 #include "dataObject/SqlPlan.h"
 #include "Sql/SqlPlanExecutor.h"
 #include "dataObject/SqlPlan.h"
-
-
 using namespace std;
 using namespace seal;
 
@@ -439,7 +437,7 @@ void testSocket() {
 
 void testSql() {
     EncryptionParameters parms(scheme_type::bfv);
-    PGconn *conn = PQconnectdb(PGSQL_CONNINFO.c_str());
+    PGconn *conn = PQconnectdb(PGSQL_CONNINFO_remote.c_str());
     //检查连接状态
     if (PQstatus(conn) != CONNECTION_OK) {
         std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
@@ -459,11 +457,15 @@ void testSql() {
     Table table = DataMapper::fileReader("../Resource/data/table0.csv",true);
     table.set_name("table0");
     encrypt_service.uploadTableIntoSql(table);
-   //vector<vector<string>> res = encrypt_service.executeSql("SELECT ID FROM student WHERE Name = 'Alice';");
-   //cout << res[0][0] << endl;
+    vector<vector<string>> res = encrypt_service.executeSql("SELECT SUM(Score) FROM student;");
+    cout << res[0][0] << endl;
 }
 
+
 int main() {
+    // Basic Usage Example
+
+    //testpaser("select Id from student where name = 'alice' and course = 18; ");
 
     testSql();
     //std::string hex = prfFunctionReturnString("people,1,aaaomksqh");

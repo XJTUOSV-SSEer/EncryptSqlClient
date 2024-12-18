@@ -5,7 +5,6 @@
 #include "EncryptService.h"
 
 
-#include <utility>
 
 #include "EncryptTools/EncryptUtil.h"
 #include "Sql/SqlPlanExecutor.h"
@@ -19,7 +18,6 @@ void EncryptService::setConn(PGconn *conn) {
     this->conn = conn;
 }
 vector<vector<string>> EncryptService::executeSql(string sql){
-    // TODO 1
     vector<SqlPlan> plans = parseSql(std::move(sql),currentTable);
     this->currentPlan = plans;
     SqlPlanExecutor sql_plan_executor(conn,plans);
@@ -39,11 +37,17 @@ void EncryptService::uploadFileIntoSql(const string &fileName) {
     string table_name = fileName.substr(0,name_final_idx);
     table.set_name(table_name);
     this->currentTable = table;
+    TableInfo table_info;
+    table_info.load_from_table(table);
+    tableMap[table.get_name()] = table_info;
     //this->tableMap[table_name] = table;
     dataMapper.generateEmmIntoSql(conn,table_name,table.get_table(),table.get_columns_type());
 }
 void EncryptService::uploadTableIntoSql(Table table){
     this->currentTable = table;
+    TableInfo table_info;
+    table_info.load_from_table(table);
+    tableMap[table.get_name()] = table_info;
     dataMapper.generateEmmIntoSql(conn,table.get_name(),table.get_table(),table.get_columns_type());
 }
 

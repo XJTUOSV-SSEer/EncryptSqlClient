@@ -123,7 +123,7 @@ int parseSumAttributeColIndex(const string& sqlQuery, const vector<string>& tabl
 }
 
 
-//vector<SqlPlan> parseSql(string sql,map<string,Table> tables)
+//vector<SqlPlan> parseSql(string sql,map<string,Tableinfo> tableinfo)
 
 vector<SqlPlan> parseSql(string sql,Table tableinfo)
 {

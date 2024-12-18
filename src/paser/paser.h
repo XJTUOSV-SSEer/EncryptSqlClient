@@ -10,5 +10,5 @@
 
 //vector<SqlPlan> parseSql(string sql,map<string,Table> tables);
 
-vector<SqlPlan> parseSql(string sql,Table tableInfo);
+vector<SqlPlan> parseSql(string sql,Table tableinfo);
 #endif //PASER_H

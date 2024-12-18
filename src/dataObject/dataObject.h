@@ -4,9 +4,13 @@
 
 #ifndef DATAOBJECT_H
 #define DATAOBJECT_H
+#include<string>
+#include<vector>
+#include "Table.h"
+#include "TableInfo.h"
 #include "EncryptedMultiMap.h"
 #include "RowMultiMap.h"
 #include "SqlPlan.h"
-#include "Table.h"
+
 
 #endif //DATAOBJECT_H

@@ -14,7 +14,6 @@ class SqlPlan {
 private:
     string type;
     vector<string> params;
-
 public:
 
     /**

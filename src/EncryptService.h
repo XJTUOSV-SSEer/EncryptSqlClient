@@ -7,6 +7,7 @@
 #include "DataMapper.h"
 #include "dataObject/SqlPlan.h"
 #include "paser/paser.h"
+#include <iostream>
 
 
 class SqlPlan;class EncryptService {
@@ -15,7 +16,7 @@ class SqlPlan;class EncryptService {
     vector<SqlPlan> currentPlan;
     PGconn *conn;
     Table currentTable;
-    map<string,Table> tableMap;
+    map<string,TableInfo> tableMap;
 public:
 
     explicit EncryptService(EncryptionParameters &params);
