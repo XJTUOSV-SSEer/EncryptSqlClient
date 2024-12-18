@@ -43,6 +43,25 @@ bool isAggregationType(const string& sqlQuery) {
     return false; // 未找到 SELECT 或不包含聚合函数
 }
 
+//判断是否是连接查询
+bool isJoinType(const string &sqlQuery) {
+    // 转换为小写，便于匹配（假设 SQL 不区分大小写）
+    string lowerQuery = sqlQuery;
+    transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), ::tolower);
+
+    // 正则表达式匹配显式连接（JOIN 语句）
+    regex explicitJoinRegex(R"(select\s+.*\s+from\s+.*\s+join\s+.*\s+on\s+.*)", regex::icase);
+
+    // 正则表达式匹配隐式连接（WHERE 子句中涉及多个表）
+    regex implicitJoinRegex(R"(select\s+.*\s+from\s+[^,]+,[^,]+\s+where\s+.*\.\w+\s*=\s*.*\.\w+)", regex::icase);
+
+    // 使用正则表达式匹配显式或隐式连接
+    if (regex_search(lowerQuery, explicitJoinRegex) || regex_search(lowerQuery, implicitJoinRegex)) {
+        return true; // 是连接查询
+    }
+    return false; // 不是连接查询
+}
+
 // 解析 WHERE 子句中的查询值，并返回它在二维数组中的列索引
 int parseWhereConditionColIndex(const string& sqlQuery, const vector<string>& table) {
     // 修改正则表达式以匹配带单引号的值
@@ -121,6 +140,119 @@ int parseSumAttributeColIndex(const string& sqlQuery, const vector<string>& tabl
     }
     return -1; // 未找到，返回 -1
 }
+//以下是多表操作函数
+// 多表表名解析：解析 SQL 查询中的表名，返回表名列表
+vector<string> parseTables(const string& sqlQuery) {
+    vector<string> tableNames; // 存储表名的结果
+    set<string> tableSet;      // 用于去重
+
+    // 正则表达式 - 提取 FROM 子句后的主表及其别名
+    regex fromRegex(R"(\bFROM\s+([a-zA-Z0-9_]+)(?:\s+([a-zA-Z0-9_]+))?)", regex::icase);
+    smatch match;
+    if (regex_search(sqlQuery, match, fromRegex)) {
+        string tableName = match[1];
+        tableSet.insert(tableName); // 主表名
+    }
+
+    // 正则表达式 - 提取 JOIN 子句中的表及其别名
+    regex joinRegex(R"((?:JOIN|INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|FULL\s+JOIN)\s+([a-zA-Z0-9_]+)(?:\s+([a-zA-Z0-9_]+))?)", regex::icase);
+    string query = sqlQuery;
+    while (regex_search(query, match, joinRegex)) {
+        string tableName = match[1];
+        if (tableSet.find(tableName) == tableSet.end()) { // 如果表名未记录
+            tableSet.insert(tableName);
+        }
+        query = match.suffix().str(); // 继续解析
+    }
+
+    // 正则表达式 - 提取 WHERE 子句中的隐式表名
+    regex whereRegex(R"(([a-zA-Z0-9_]+)\.[a-zA-Z0-9_]+\s*=)", regex::icase);
+    query = sqlQuery;
+    while (regex_search(query, match, whereRegex)) {
+        string tableName = match[1];
+        if (tableSet.find(tableName) == tableSet.end()) {
+            tableSet.insert(tableName);
+        }
+        query = match.suffix().str(); // 继续解析
+    }
+
+    // 将 set 中的表名存入 vector
+    tableNames.assign(tableSet.begin(), tableSet.end());
+    return tableNames;
+}
+
+// 多表投影函数：解析 SQL 查询中的 SELECT 子句属性名
+vector<string> parseSelectAttributes(string& sqlQuery) {
+    vector<string> attributes; // 用于存储属性名
+
+    // 正则表达式 - 提取 SELECT 和 FROM 之间的部分
+    regex selectRegex(R"(\bSELECT\s+(.*?)\s+FROM\b)", regex::icase);
+    smatch match;
+
+    // 如果匹配成功
+    if (regex_search(sqlQuery, match, selectRegex)) {
+        string selectClause = match[1]; // 获取 SELECT 和 FROM 之间的部分
+
+        // 分割属性名，以逗号为分隔符
+        regex attributeRegex(R"(\s*([^,\s]+)\s*(?:,|$))");
+        string::const_iterator searchStart(selectClause.cbegin());
+        smatch attrMatch;
+
+        while (regex_search(searchStart, selectClause.cend(), attrMatch, attributeRegex)) {
+            attributes.push_back(attrMatch[1]); // 保存每个属性名
+            searchStart = attrMatch.suffix().first; // 移动到下一部分
+        }
+    }
+
+    return attributes;
+}
+
+// 多表条件函数：解析 WHERE 子句中的等号表达式
+vector<pair<string, string>> parseWhereConditions(const string& sqlQuery) {
+    vector<pair<string, string>> conditions; // 存储等号两侧的属性名
+
+    // 正则表达式 - 匹配 WHERE 子句及其后面的条件
+    regex whereRegex(R"(\bWHERE\s+(.*))", regex::icase); // 匹配 WHERE 后的条件部分
+    smatch match;
+
+    if (regex_search(sqlQuery, match, whereRegex)) {
+        string whereClause = match[1]; // 获取 WHERE 子句后的部分
+
+        // 正则表达式 - 提取等号两侧的内容
+        regex conditionRegex(R"((\S+)\s*=\s*([\S']+))"); // 匹配 "属性1 = 属性2"
+        string::const_iterator searchStart(whereClause.cbegin());
+        smatch conditionMatch;
+
+        while (regex_search(searchStart, whereClause.cend(), conditionMatch, conditionRegex)) {
+            string left = conditionMatch[1];  // 等号左侧的属性
+            string right = conditionMatch[2]; // 等号右侧的属性或值
+
+            // 去掉引号（如果右侧是字符串值）
+            if (right.front() == '\'' && right.back() == '\'') {
+                right = right.substr(1, right.size() - 2);
+            }
+
+            conditions.emplace_back(left, right); // 存储为 pair
+            searchStart = conditionMatch.suffix().first; // 继续匹配剩余部分
+        }
+    }
+
+    return conditions;
+}
+
+//字符串分割函数split，用于分割.的左右部分
+vector<string> split(string& input) {
+    vector<string> tokens; // 用于存储分割结果
+    regex re(R"(\.)");     // 匹配点 "." 作为分隔符
+    sregex_token_iterator it(input.begin(), input.end(), re, -1); // 正则分割
+    sregex_token_iterator end;
+
+    while (it != end) {
+        tokens.push_back(*it++); // 将分割的每部分存入 tokens
+    }
+
+    return tokens;
+}
 
 
 //vector<SqlPlan> parseSql(string sql,map<string,Tableinfo> tableinfo)
@@ -135,6 +267,8 @@ vector<SqlPlan> parseSql(string sql,Table tableinfo)
     //}
     vector<string> col_name = tableinfo.get_columns();
     vector<string> col_types = tableinfo.get_columns_type();
+
+
     //测试语句
     // string s = "SELECT id FROM student WHERE name = 'Bob'";
 
@@ -178,6 +312,140 @@ vector<SqlPlan> parseSql(string sql,Table tableinfo)
         plans.push_back(pl2);
 
     }
+
+    SqlPlan resPlan("result",res_param);
+    plans.push_back(resPlan);
+    return plans;
+
+}
+
+vector<SqlPlan> parseSql(string sql,map<string,TableInfo> tables)
+{
+    stringstream ss;
+
+    //测试语句
+    // string s = "SELECT id FROM student WHERE name = 'Bob'";
+
+    vector<SqlPlan> plans;
+    vector<string> res_param;
+    if(isJoinType(sql)) {
+        vector<string> tableNames = parseTables(sql);
+        vector<string> projectionNames = parseSelectAttributes(sql);
+        vector<pair<string,string>> conditions = parseWhereConditions(sql);
+
+        for(string& projectionName : projectionNames)
+        {
+            vector<string> params= split(projectionName);
+            if(params.size()<=1)
+                continue;
+            TableInfo cur_info = tables[params[0]];
+            vector<string> columns = cur_info.get_columns();
+            for(int i=0;i<columns.size();i++)
+            {
+                if(params[1] == columns[i])
+                {
+                    params[1] = to_string(i);
+                    break;
+                }
+            }
+            projectionName = params[0] + "," + params[1];
+            //cout << projectionName << endl;
+
+        }
+
+        for(pair<string,string>& condition : conditions) {
+            // 处理条件左侧
+            vector<string> leftParams = split(condition.first);
+            if (leftParams.size() > 1) {
+                // 如果可以 split，则获取表信息
+                TableInfo cur_info = tables[leftParams[0]];
+                vector<string> columns = cur_info.get_columns();
+                for (int i = 0; i < columns.size(); i++) {
+                    if (leftParams[1] == columns[i]) {
+                        leftParams[1] = to_string(i);
+                        break;
+                    }
+                }
+                condition.first = leftParams[0] + "," + leftParams[1];
+            }
+
+            // 处理条件右侧
+            vector<string> rightParams = split(condition.second);
+            if (rightParams.size() > 1) {
+                // 如果可以 split，则获取表信息
+                TableInfo cur_info = tables[rightParams[0]];
+                vector<string> columns = cur_info.get_columns();
+                for (int i = 0; i < columns.size(); i++) {
+                    if (rightParams[1] == columns[i]) {
+                        rightParams[1] = to_string(i);
+                        break;
+                    }
+                }
+                condition.second = rightParams[0] + "," + rightParams[1];
+            }
+            //cout << condition.first << ' ' << condition.second << endl;
+        }
+        vector<string> p1 = {conditions[1].first, conditions[1].second};
+        SqlPlan pl1("sigma",p1);
+        plans.push_back(pl1);
+
+        vector<string> p2 = {conditions[0].first, conditions[0].second};
+        SqlPlan pl2("join",p1);
+        plans.push_back(pl2);
+
+        vector<string> p3 = {tableNames[0]};
+        SqlPlan pl3("projection",p3);
+        plans.push_back(pl3);
+
+        vector<string> p4 = {"string"};
+        SqlPlan pl4("result",p4);
+        plans.push_back(pl4);
+
+        return plans;
+
+
+
+    }
+
+    // else if(isAggregationType(sql))     //如果是包含聚合函数的查询
+    // {
+    //
+    //     //cout << parseSumAttributeColIndex(sql,col_name) << endl;
+    //     int colIndex = parseSumAttributeColIndex(sql, col_name);
+    //
+    //     res_param.push_back(col_types[colIndex]);
+    //     ss << tableinfo.get_name()<< "," << colIndex;
+    //
+    //     string p3 = ss.str();
+    //     vector<string> actual_p3 = {prfFunctionReturnString(p3,true)};
+    //     ss.str("");
+    //     SqlPlan pl3("sum",actual_p3);
+    //     plans.push_back(pl3);
+    // }
+    // else if(isSelectType(sql))        //如果是简单查询
+    // {
+    //     int colIndex1 = parseWhereConditionColIndex(sql, col_name);
+    //     //cout << "所在的列是" << parseWhereConditionColIndex(sql,col_name) << endl;           //where子句后的内容所在的列
+    //     ss << tableinfo.get_name() <<","
+    //        << colIndex1 << ","
+    //        << parseWhereCondition(sql);
+    //     string p1 = ss.str();
+    //     vector<string> actual_p1 = {prfFunctionReturnString(p1, true)};
+    //     ss.str("");
+    //     SqlPlan pl1("select",actual_p1);
+    //     plans.push_back(pl1);
+    //
+    //     //cout << "所在的列是" << parseSelectAttributeColIndex(sql,col_name) << endl;
+    //     int colIndex2 = parseSelectAttributeColIndex(sql, col_name);//select后的内容所在的列
+    //     res_param.push_back(col_types[colIndex2]);
+    //     ss << colIndex2;
+    //     string p2 = ss.str();
+    //     vector<string> actual_p2 = {p2};
+    //     ss.str("");
+    //     SqlPlan pl2("projection",actual_p2);
+    //     plans.push_back(pl2);
+    //
+    // }
 
     SqlPlan resPlan("result",res_param);
     plans.push_back(resPlan);

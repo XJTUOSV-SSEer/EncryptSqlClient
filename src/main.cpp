@@ -467,7 +467,30 @@ int main() {
 
     //testpaser("select Id from student where name = 'alice' and course = 18; ");
 
-    testSql();
+    //testSql();
+    TableInfo table1;
+    table1.set_name("student");
+    table1.set_columns({"ID", "Name", "course", "score"});
+    table1.set_columns_type({"string", "string", "string", "int"});
+   //table1.set_table({
+   //    {"A05", "Alice", "16", "80"},
+   //    {"A12", "Bob", "18", "98"},
+   //    {"A03", "Eve", "18", "92"}
+   //});
+
+    TableInfo table2;
+    table2.set_name("courseinfo");
+    table2.set_columns({"course", "Department"});
+    table2.set_columns_type({"string", "string"});
+    //table2.set_table({
+    //    {"16", "CS"},
+    //    {"18", "MATH"}
+    //});
+    map<string,TableInfo> table_map;
+    table_map[table1.get_name()] = table1;
+    table_map[table2.get_name()] = table2;
+    string sql = "SELECT student.Name FROM student, courseinfo WHERE student.course=courseinfo.course AND courseinfo.Department='MATH'";
+    vector<SqlPlan> plans= parseSql(sql,table_map);
     //std::string hex = prfFunctionReturnString("people,1,aaaomksqh");
     //cout << hex << endl;
     return 0;
