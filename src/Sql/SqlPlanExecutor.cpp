@@ -32,7 +32,7 @@ void SqlPlanExecutor::execute() {
 
         string sqlQuery,targetTable;
         std::string pType = plan.getType();
-        if(pType == "select") {
+        if(pType == "select"|| pType == "sigma") {
             targetTable = "mmv";
             sqlQuery = generateSigmaQuery(targetTable,tmp_table,plan.getParams()[0]);
             tmpTables.push_back(tmp_table);

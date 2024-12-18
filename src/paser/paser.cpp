@@ -90,7 +90,19 @@ int parseWhereConditionColIndex(const string& sqlQuery, const vector<string>& ta
 
     return -1; // 未找到匹配的列，返回 -1
 }
+std::vector<std::string> extractSingleQuoteContent(const std::string& input) {
+    std::vector<std::string> results;
+    std::regex pattern(R"('([^'\\]*(\\.[^'\\]*)*)')");  // 正则表达式匹配单引号内的内容
+    std::smatch matches;
 
+    auto it = input.begin();
+    while (std::regex_search(it, input.end(), matches, pattern)) {
+        results.push_back(matches[1].str());  // 提取单引号内的内容
+        it = matches.suffix().first;  // 更新迭代器位置，继续搜索
+    }
+
+    return results;
+}
 string parseWhereCondition(const string& sqlQuery) {
     // 修改正则表达式以匹配带单引号的值
     regex whereRegex(R"(WHERE\s+(\w+)\s*=\s*'(\w+)')", regex::icase);
@@ -332,9 +344,10 @@ vector<SqlPlan> parseSql(string sql,map<string,TableInfo> tables)
         vector<string> tableNames = parseTables(sql);
         vector<string> projectionNames = parseSelectAttributes(sql);
         vector<pair<string,string>> conditions = parseWhereConditions(sql);
-
-        for(string& projectionName : projectionNames)
+        string projectionIndex;
+        for(int i=0;i<projectionNames.size();i++)
         {
+            string projectionName = projectionNames[i];
             vector<string> params= split(projectionName);
             if(params.size()<=1)
                 continue;
@@ -345,17 +358,23 @@ vector<SqlPlan> parseSql(string sql,map<string,TableInfo> tables)
                 if(params[1] == columns[i])
                 {
                     params[1] = to_string(i);
+                    projectionIndex = to_string(i);
                     break;
                 }
             }
-            projectionName = params[0] + "," + params[1];
+            projectionNames[i] = params[0] + "," + params[1];
+
             //cout << projectionName << endl;
 
         }
 
-        for(pair<string,string>& condition : conditions) {
+        for(int i=0;i<conditions.size();i++) {
             // 处理条件左侧
+            pair<string,string> condition = conditions[i];
             vector<string> leftParams = split(condition.first);
+            vector<string> rightParams = split(condition.second);
+            bool is_join = false;
+            if(leftParams.size() == rightParams.size()&&leftParams.size()==2)is_join =true;
             if (leftParams.size() > 1) {
                 // 如果可以 split，则获取表信息
                 TableInfo cur_info = tables[leftParams[0]];
@@ -366,11 +385,11 @@ vector<SqlPlan> parseSql(string sql,map<string,TableInfo> tables)
                         break;
                     }
                 }
-                condition.first = leftParams[0] + "," + leftParams[1];
+                if(is_join) {condition.first = leftParams[0] + "_" + leftParams[1];}
+                else condition.first = leftParams[0] + "," + leftParams[1];
             }
 
             // 处理条件右侧
-            vector<string> rightParams = split(condition.second);
             if (rightParams.size() > 1) {
                 // 如果可以 split，则获取表信息
                 TableInfo cur_info = tables[rightParams[0]];
@@ -381,19 +400,24 @@ vector<SqlPlan> parseSql(string sql,map<string,TableInfo> tables)
                         break;
                     }
                 }
-                condition.second = rightParams[0] + "," + rightParams[1];
+                if(is_join)condition.second = rightParams[0] + "_" + rightParams[1];
+                else condition.second = rightParams[0] + "," + rightParams[1];
             }
-            //cout << condition.first << ' ' << condition.second << endl;
+            conditions[i] = condition;
         }
-        vector<string> p1 = {conditions[1].first, conditions[1].second};
+        string no_quote = extractSingleQuoteContent(conditions[1].second)[0];
+
+        string pp1 = conditions[1].first + "," + no_quote;
+        string enc_pp1 = prfFunctionReturnString(pp1,true);
+        vector<string> p1 = {enc_pp1};
         SqlPlan pl1("sigma",p1);
         plans.push_back(pl1);
 
         vector<string> p2 = {conditions[0].first, conditions[0].second};
-        SqlPlan pl2("join",p1);
+        SqlPlan pl2("join",p2);
         plans.push_back(pl2);
 
-        vector<string> p3 = {tableNames[0]};
+        vector<string> p3 = {projectionIndex};
         SqlPlan pl3("projection",p3);
         plans.push_back(pl3);
 

@@ -437,7 +437,7 @@ void testSocket() {
 
 void testSql() {
     EncryptionParameters parms(scheme_type::bfv);
-    PGconn *conn = PQconnectdb(PGSQL_CONNINFO_remote.c_str());
+    PGconn *conn = PQconnectdb(PGSQL_CONNINFO.c_str());
     //检查连接状态
     if (PQstatus(conn) != CONNECTION_OK) {
         std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
@@ -454,44 +454,19 @@ void testSql() {
     EncryptService encrypt_service(parms);
     encrypt_service.setConn(conn);
 
-    Table table = DataMapper::fileReader("../Resource/data/table0.csv",true);
-    table.set_name("table0");
-    encrypt_service.uploadTableIntoSql(table);
-    vector<vector<string>> res = encrypt_service.executeSql("SELECT SUM(Score) FROM student;");
+    Table table2 = DataMapper::fileReader("../Resource/data/table0.csv",true);
+    table2.set_name("student");
+    Table table1 = DataMapper::fileReader("../Resource/data/table1.csv",true);
+    table1.set_name("courseinfo");
+    encrypt_service.uploadTableIntoSql(table1);
+    encrypt_service.uploadTableIntoSql(table2);
+    encrypt_service.uploadJoinTableIntoSql(table1,table2,2,0);
+    vector<vector<string>> res = encrypt_service.executeSql("SELECT student.Name FROM student, courseinfo WHERE student.Course=courseinfo.Course AND courseinfo.CourseName='Math';");
     cout << res[0][0] << endl;
 }
 
 
 int main() {
-    // Basic Usage Example
-
-    //testpaser("select Id from student where name = 'alice' and course = 18; ");
-
-    //testSql();
-    TableInfo table1;
-    table1.set_name("student");
-    table1.set_columns({"ID", "Name", "course", "score"});
-    table1.set_columns_type({"string", "string", "string", "int"});
-   //table1.set_table({
-   //    {"A05", "Alice", "16", "80"},
-   //    {"A12", "Bob", "18", "98"},
-   //    {"A03", "Eve", "18", "92"}
-   //});
-
-    TableInfo table2;
-    table2.set_name("courseinfo");
-    table2.set_columns({"course", "Department"});
-    table2.set_columns_type({"string", "string"});
-    //table2.set_table({
-    //    {"16", "CS"},
-    //    {"18", "MATH"}
-    //});
-    map<string,TableInfo> table_map;
-    table_map[table1.get_name()] = table1;
-    table_map[table2.get_name()] = table2;
-    string sql = "SELECT student.Name FROM student, courseinfo WHERE student.course=courseinfo.course AND courseinfo.Department='MATH'";
-    vector<SqlPlan> plans= parseSql(sql,table_map);
-    //std::string hex = prfFunctionReturnString("people,1,aaaomksqh");
-    //cout << hex << endl;
+    testSql();
     return 0;
 }

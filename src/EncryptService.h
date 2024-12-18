@@ -35,6 +35,7 @@ public:
      * @param table 需要加密的表信息
      */
     void uploadTableIntoSql(Table table);
+    void uploadJoinTableIntoSql(Table table1, Table table2,int join_col1,int join_col2);
     /**
      * 将得到的结果解密并返回
      * @param res 得到的结果

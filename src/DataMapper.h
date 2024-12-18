@@ -39,12 +39,19 @@ public:
     RowMultiMap rowMultiMapConstruct( string table_name, vector<vector<string>> inData, vector<string> columnsTypes);
     RowMultiMap colMultiMapConstruct( string table_name, vector<vector<string>> inData, vector<string> columnsTypes);
 
-    RowMultiMap valueMultiMapConstruct( string table_name, vector<vector<string>> inData, vector<string> columnsTypes);
+    RowMultiMap valueMultiMapConstruct(string table_name, vector<vector<string>> inData, vector<string> columnsTypes);
+    //
     RowMultiMap joinMultiMapConstruct(string table_name1, string table_name2, vector<vector<string>> table1, vector<vector<string>> table2, int joinCol1,int joinCol2);
     void generateEmmIntoSql(PGconn *conn, int tableID, vector<vector<string>> Table, vector<string> columnsTypes);
     void generateEmmIntoSql(PGconn *conn, string table_name, vector<vector<string>> table, vector<string> types);
+    /**
+     *  构建据 table1查找 table2 的 mmjoin 表
+     */
     void generateJoinEmmIntoSql(PGconn *conn, string table_name1, string table_name2, vector<vector<string>> table1,
                                 vector<vector<string>> table2, int joinCol1, int joinCol2);
+    /**
+     *  构建据 table1查找 table2 的 mmjoin 表
+     */
     void generateJoinEmmIntoSql(PGconn *conn, int tableID1, int tableID2, vector<vector<string>>table1, vector<vector<string>>table2, int joinCol1, int joinCol2);
     int decryptData(string cipertext);
     static vector<vector<string>> rowMapperDecrypt(RowMultiMap rmm);

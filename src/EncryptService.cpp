@@ -18,7 +18,8 @@ void EncryptService::setConn(PGconn *conn) {
     this->conn = conn;
 }
 vector<vector<string>> EncryptService::executeSql(string sql){
-    vector<SqlPlan> plans = parseSql(std::move(sql),currentTable);
+    //vector<SqlPlan> plans = parseSql(std::move(sql),currentTable);
+    vector<SqlPlan> plans = parseSql(std::move(sql),tableMap);
     this->currentPlan = plans;
     SqlPlanExecutor sql_plan_executor(conn,plans);
     sql_plan_executor.execute();
@@ -50,7 +51,10 @@ void EncryptService::uploadTableIntoSql(Table table){
     tableMap[table.get_name()] = table_info;
     dataMapper.generateEmmIntoSql(conn,table.get_name(),table.get_table(),table.get_columns_type());
 }
-
+void EncryptService::uploadJoinTableIntoSql(Table table1,Table table2,int join_col1,int join_col2) {
+    dataMapper.generateJoinEmmIntoSql(conn,table1.get_name(),table2.get_name(),table1.get_table(),
+        table2.get_table(),join_col1,join_col2);
+}
 
 vector<vector<string>> EncryptService::decryptedResult(vector<vector<string>> res) {
     SqlPlan resPLan = currentPlan.back();
