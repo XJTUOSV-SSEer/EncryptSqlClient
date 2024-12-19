@@ -436,7 +436,7 @@ void testSocket() {
 
 void testSql() {
     EncryptionParameters parms(scheme_type::bfv);
-    PGconn *conn = PQconnectdb(PGSQL_CONNINFO.c_str());
+    PGconn *conn = PQconnectdb(PGSQL_CONNINFO_remote.c_str());
     //检查连接状态
     if (PQstatus(conn) != CONNECTION_OK) {
         std::cerr << "连接数据库失败: " << PQerrorMessage(conn) << std::endl;
@@ -459,9 +459,9 @@ void testSql() {
     table1.set_name("courseinfo");
     encrypt_service.uploadTableIntoSql(table1);
     encrypt_service.uploadTableIntoSql(table2);
-    //vector<vector<string>> res = encrypt_service.executeSql("SELECT student.Name FROM student, courseinfo WHERE student.Course=courseinfo.Course AND courseinfo.CourseName='Math';");
+    vector<vector<string>> res = encrypt_service.executeSql("SELECT student.Name FROM student, courseinfo WHERE student.Course=courseinfo.Course AND courseinfo.CourseName='Math';");
     //vector<vector<string>> res = encrypt_service.executeSql("SELECT Name FROM student WHERE Course = 16;");
-    vector<vector<string>> res = encrypt_service.executeSql("SELECT SUM(Score) FROM student;");
+    //vector<vector<string>> res = encrypt_service.executeSql("SELECT SUM(Score) FROM student;");
     cout << res[0][0] << endl;
 }
 

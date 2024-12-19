@@ -5,10 +5,11 @@
 #ifndef SQLPLANEXECUTOR_H
 #define SQLPLANEXECUTOR_H
 #include <libpq-fe.h>
-#include <vector>
 #include <string>
+#include <vector>
 
-class SqlPlan;
+
+class Table;class SqlPlan;
 /**
  * 执行对应的 sqlplan，主要是将需要的计划转换成对应的 sql 语句
  */
@@ -28,6 +29,7 @@ public:
     void execute();
     std::vector<std::vector<std::string>> getResults();
     std::string getResType();
+
 
 };
 

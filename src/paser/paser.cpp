@@ -424,8 +424,11 @@ vector<SqlPlan> parseSql(string sql,map<string,TableInfo> tables)
     if(is_join) //如果是连接查询
     {
         
-        string no_quote = extractSingleQuoteContent(conditions[1].second)[0];
-
+        vector<string> no_quote_list = extractSingleQuoteContent(conditions[1].second);
+        string no_quote = conditions[1].second;
+        if(!no_quote_list.empty()) {
+            no_quote = no_quote_list[0];
+        }
         string pp1 = conditions[1].first + "," + no_quote;
         string enc_pp1 = prfFunctionReturnString(pp1,true);
         vector<string> p1 = {enc_pp1};
