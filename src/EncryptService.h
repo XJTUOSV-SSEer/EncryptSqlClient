@@ -8,6 +8,7 @@
 #include "dataObject/SqlPlan.h"
 #include "paser/paser.h"
 #include <iostream>
+#include <regex>
 
 
 class SqlPlan;class EncryptService {
@@ -15,7 +16,7 @@ class SqlPlan;class EncryptService {
     DataMapper dataMapper;
     vector<SqlPlan> currentPlan;
     PGconn *conn;
-    Table currentTable;
+    map<string,Table> currentTable;
     map<string,TableInfo> tableMap;
 public:
 
@@ -55,6 +56,10 @@ public:
      * @return sql 执行结果
      */
     vector<vector<string>>  executeSql(string sql);
+    /**
+     * 检查缓存中的两表并予以构建连接。目前是写死的，后续需要改进
+     */
+    void checkAndCreateJoinMM();
 
 };
 

@@ -32,12 +32,23 @@ vector<vector<string>> EncryptService::executeSql(string sql){
     return res;
 }
 
+void EncryptService::checkAndCreateJoinMM() {
+    if(this->currentTable.count("student") == 0 || this->currentTable.count("courseinfo") == 0) {
+        return;
+    }
+    Table student = this->currentTable["student"];
+    Table courseinfo = this->currentTable["courseinfo"];
+    uploadJoinTableIntoSql(courseinfo,student,0,2);
+}
+
+
+
 void EncryptService::uploadFileIntoSql(const string &fileName) {
     Table table = DataMapper::fileReader(fileName,true);
     int name_final_idx = fileName.find_first_of(".");
     string table_name = fileName.substr(0,name_final_idx);
     table.set_name(table_name);
-    this->currentTable = table;
+    this->currentTable[table_name] = table;
     TableInfo table_info;
     table_info.load_from_table(table);
     tableMap[table.get_name()] = table_info;
@@ -45,11 +56,12 @@ void EncryptService::uploadFileIntoSql(const string &fileName) {
     dataMapper.generateEmmIntoSql(conn,table_name,table.get_table(),table.get_columns_type());
 }
 void EncryptService::uploadTableIntoSql(Table table){
-    this->currentTable = table;
+    this->currentTable[table.get_name()] = table;
     TableInfo table_info;
     table_info.load_from_table(table);
     tableMap[table.get_name()] = table_info;
     dataMapper.generateEmmIntoSql(conn,table.get_name(),table.get_table(),table.get_columns_type());
+    checkAndCreateJoinMM();
 }
 void EncryptService::uploadJoinTableIntoSql(Table table1,Table table2,int join_col1,int join_col2) {
     dataMapper.generateJoinEmmIntoSql(conn,table1.get_name(),table2.get_name(),table1.get_table(),

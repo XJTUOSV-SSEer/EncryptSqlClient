@@ -16,16 +16,19 @@ private:
     vector<vector<string>> table;
     vector<string> columns;
     vector<string> columns_type;
+    vector<string> key_type;
 public:
     Table();
     void set_table(vector<vector<string>> table);
     void set_columns(vector<string> columns);
     void set_columns_type(vector<string> columns_type);
     void set_name(string name);
+    void set_key_type(vector<string> key_type);
     string get_name();
     vector<vector<string>> get_table();
     vector<string> get_columns();
     vector<string> get_columns_type();
+    vector<string> get_key_type();
 
 
 };

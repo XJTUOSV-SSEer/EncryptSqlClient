@@ -18,9 +18,10 @@ void Table::set_columns_type(vector<string> columns_type){
 void Table::set_name(std::string name) {
     this->name = std::move(name);
 }
-string Table::get_name() {
-        return this->name;
+void Table::set_key_type(vector<string> key_type) {
+    this->key_type = std::move(key_type);
 }
+string Table::get_name() { return this->name; }
 vector<vector<string>> Table::get_table(){
     return this->table;
 }
@@ -30,3 +31,5 @@ vector<string> Table::get_columns(){
 vector<string> Table::get_columns_type(){
     return this->columns_type;
 }
+
+vector<string> Table::get_key_type() { return this->key_type; }

@@ -219,6 +219,14 @@ vector<string> parseSelectAttributes(string& sqlQuery) {
     return attributes;
 }
 
+int findColIndex(vector<string> col_names,string col) {
+    for(int i = 0; i < col_names.size(); ++i) {
+        if(col_names[i] == col) {
+            return i;
+        }
+    }
+}
+
 // 多表条件函数：解析 WHERE 子句中的等号表达式
 vector<pair<string, string>> parseWhereConditions(const string& sqlQuery) {
     vector<pair<string, string>> conditions; // 存储等号两侧的属性名
@@ -334,77 +342,88 @@ vector<SqlPlan> parseSql(string sql,Table tableinfo)
 vector<SqlPlan> parseSql(string sql,map<string,TableInfo> tables)
 {
     stringstream ss;
-
+    if (sql.back() == ';') {
+        sql.pop_back();
+    }
     //测试语句
     // string s = "SELECT id FROM student WHERE name = 'Bob'";
 
     vector<SqlPlan> plans;
     vector<string> res_param;
-    if(isJoinType(sql)) {
-        vector<string> tableNames = parseTables(sql);
-        vector<string> projectionNames = parseSelectAttributes(sql);
-        vector<pair<string,string>> conditions = parseWhereConditions(sql);
-        string projectionIndex;
-        for(int i=0;i<projectionNames.size();i++)
+    //分别是sql 查询中的表名、最终的投影属性名、where条件
+    vector<string> tableNames = parseTables(sql);
+    vector<string> projectionNames = parseSelectAttributes(sql);
+    vector<pair<string,string>> conditions = parseWhereConditions(sql);
+    bool is_join = false;
+    bool is_aggregation_sum = isAggregationType(sql);
+    bool is_simple_select = false;
+    
+    string projectionIndex;
+    for(int i=0;i<projectionNames.size();i++)
+    {
+        string projectionName = projectionNames[i];
+        vector<string> params= split(projectionName);
+        if(params.size()<=1)
+            continue;
+        TableInfo cur_info = tables[params[0]];
+        vector<string> columns = cur_info.get_columns();
+        for(int i=0;i<columns.size();i++)
         {
-            string projectionName = projectionNames[i];
-            vector<string> params= split(projectionName);
-            if(params.size()<=1)
-                continue;
-            TableInfo cur_info = tables[params[0]];
-            vector<string> columns = cur_info.get_columns();
-            for(int i=0;i<columns.size();i++)
+            if(params[1] == columns[i])
             {
-                if(params[1] == columns[i])
-                {
-                    params[1] = to_string(i);
-                    projectionIndex = to_string(i);
+                params[1] = to_string(i);
+                projectionIndex = to_string(i);
+                break;
+            }
+        }
+        projectionNames[i] = params[0] + "," + params[1];
+        //cout << projectionName << endl;
+    }
+    for(int i=0;i<conditions.size();i++) {
+        // 处理条件左侧
+        pair<string,string> condition = conditions[i];
+        vector<string> leftParams = split(condition.first);
+        vector<string> rightParams = split(condition.second);
+        bool is_cur_join_type = false;
+        if(leftParams.size() == rightParams.size()&&leftParams.size()==2)is_cur_join_type  =true;
+        if (leftParams.size() > 1) {
+            // 如果可以 split，则获取表信息
+            TableInfo cur_info = tables[leftParams[0]];
+            vector<string> columns = cur_info.get_columns();
+            for (int i = 0; i < columns.size(); i++) {
+                if (leftParams[1] == columns[i]) {
+                    leftParams[1] = to_string(i);
                     break;
                 }
             }
-            projectionNames[i] = params[0] + "," + params[1];
-
-            //cout << projectionName << endl;
-
+            if(is_cur_join_type ) {condition.first = leftParams[0] + "_" + leftParams[1];}
+            else condition.first = leftParams[0] + "," + leftParams[1];
         }
-
-        for(int i=0;i<conditions.size();i++) {
-            // 处理条件左侧
-            pair<string,string> condition = conditions[i];
-            vector<string> leftParams = split(condition.first);
-            vector<string> rightParams = split(condition.second);
-            bool is_join = false;
-            if(leftParams.size() == rightParams.size()&&leftParams.size()==2)is_join =true;
-            if (leftParams.size() > 1) {
-                // 如果可以 split，则获取表信息
-                TableInfo cur_info = tables[leftParams[0]];
-                vector<string> columns = cur_info.get_columns();
-                for (int i = 0; i < columns.size(); i++) {
-                    if (leftParams[1] == columns[i]) {
-                        leftParams[1] = to_string(i);
-                        break;
-                    }
+        // 处理条件右侧
+        if (rightParams.size() > 1) {
+            // 如果可以 split，则获取表信息
+            TableInfo cur_info = tables[rightParams[0]];
+            vector<string> columns = cur_info.get_columns();
+            for (int i = 0; i < columns.size(); i++) {
+                if (rightParams[1] == columns[i]) {
+                    rightParams[1] = to_string(i);
+                    break;
                 }
-                if(is_join) {condition.first = leftParams[0] + "_" + leftParams[1];}
-                else condition.first = leftParams[0] + "," + leftParams[1];
             }
-
-            // 处理条件右侧
-            if (rightParams.size() > 1) {
-                // 如果可以 split，则获取表信息
-                TableInfo cur_info = tables[rightParams[0]];
-                vector<string> columns = cur_info.get_columns();
-                for (int i = 0; i < columns.size(); i++) {
-                    if (rightParams[1] == columns[i]) {
-                        rightParams[1] = to_string(i);
-                        break;
-                    }
-                }
-                if(is_join)condition.second = rightParams[0] + "_" + rightParams[1];
-                else condition.second = rightParams[0] + "," + rightParams[1];
-            }
-            conditions[i] = condition;
+            if(is_cur_join_type)condition.second = rightParams[0] + "_" + rightParams[1];
+            else condition.second = rightParams[0] + "," + rightParams[1];
+            if(is_cur_join_type)is_join = true;
         }
+        conditions[i] = condition;
+    }
+
+    //判断查询类型
+
+
+
+    if(is_join) //如果是连接查询
+    {
+        
         string no_quote = extractSingleQuoteContent(conditions[1].second)[0];
 
         string pp1 = conditions[1].first + "," + no_quote;
@@ -431,45 +450,48 @@ vector<SqlPlan> parseSql(string sql,map<string,TableInfo> tables)
 
     }
 
-    // else if(isAggregationType(sql))     //如果是包含聚合函数的查询
-    // {
-    //
-    //     //cout << parseSumAttributeColIndex(sql,col_name) << endl;
-    //     int colIndex = parseSumAttributeColIndex(sql, col_name);
-    //
-    //     res_param.push_back(col_types[colIndex]);
-    //     ss << tableinfo.get_name()<< "," << colIndex;
-    //
-    //     string p3 = ss.str();
-    //     vector<string> actual_p3 = {prfFunctionReturnString(p3,true)};
-    //     ss.str("");
-    //     SqlPlan pl3("sum",actual_p3);
-    //     plans.push_back(pl3);
-    // }
-    // else if(isSelectType(sql))        //如果是简单查询
-    // {
-    //     int colIndex1 = parseWhereConditionColIndex(sql, col_name);
-    //     //cout << "所在的列是" << parseWhereConditionColIndex(sql,col_name) << endl;           //where子句后的内容所在的列
-    //     ss << tableinfo.get_name() <<","
-    //        << colIndex1 << ","
-    //        << parseWhereCondition(sql);
-    //     string p1 = ss.str();
-    //     vector<string> actual_p1 = {prfFunctionReturnString(p1, true)};
-    //     ss.str("");
-    //     SqlPlan pl1("select",actual_p1);
-    //     plans.push_back(pl1);
-    //
-    //     //cout << "所在的列是" << parseSelectAttributeColIndex(sql,col_name) << endl;
-    //     int colIndex2 = parseSelectAttributeColIndex(sql, col_name);//select后的内容所在的列
-    //     res_param.push_back(col_types[colIndex2]);
-    //     ss << colIndex2;
-    //     string p2 = ss.str();
-    //     vector<string> actual_p2 = {p2};
-    //     ss.str("");
-    //     SqlPlan pl2("projection",actual_p2);
-    //     plans.push_back(pl2);
-    //
-    // }
+    else if(is_aggregation_sum)     //如果是包含聚合函数的查询
+    {
+        vector<string> col_name = tables[tableNames[0]].get_columns();
+        vector<string> col_types = tables[tableNames[0]].get_columns_type();
+        //cout << parseSumAttributeColIndex(sql,col_name) << endl;
+        int colIndex = parseSumAttributeColIndex(sql, col_name);
+
+        res_param.push_back(col_types[colIndex]);
+        ss << tables[tableNames[0]].get_name()<< "," << colIndex;
+
+        string p3 = ss.str();
+        vector<string> actual_p3 = {prfFunctionReturnString(p3,true)};
+        ss.str("");
+        SqlPlan pl3("sum",actual_p3);
+        plans.push_back(pl3);
+    }
+    else        //如果是简单查询
+    {
+        vector<string> col_name = tables[tableNames[0]].get_columns();
+        vector<string> col_types = tables[tableNames[0]].get_columns_type();
+        int colIndex1 = findColIndex(col_name,conditions[0].first);
+        //cout << "所在的列是" << parseWhereConditionColIndex(sql,col_name) << endl;           //where子句后的内容所在的列
+        ss << tables[tableNames[0]].get_name() <<","
+           << colIndex1 << ","
+           << conditions[0].second;
+        string p1 = ss.str();
+        vector<string> actual_p1 = {prfFunctionReturnString(p1, true)};
+        ss.str("");
+        SqlPlan pl1("select",actual_p1);
+        plans.push_back(pl1);
+
+        //cout << "所在的列是" << parseSelectAttributeColIndex(sql,col_name) << endl;
+        int colIndex2 = findColIndex(col_name,projectionNames[0]);//select后的内容所在的列
+        res_param.push_back(col_types[colIndex2]);
+        ss << colIndex2;
+        string p2 = ss.str();
+        vector<string> actual_p2 = {p2};
+        ss.str("");
+        SqlPlan pl2("projection",actual_p2);
+        plans.push_back(pl2);
+
+    }
 
     SqlPlan resPlan("result",res_param);
     plans.push_back(resPlan);

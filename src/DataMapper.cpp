@@ -237,7 +237,7 @@ RowMultiMap DataMapper::joinMultiMapConstruct(string table_name1, string table_n
 }
 
 
-Table DataMapper::fileReader(const string& fileName,bool is_first_name_and_second_type) {
+Table DataMapper::fileReader(const string& fileName,bool has_header) {
     Table table;
     ifstream inFile;
 	inFile.open(fileName);
@@ -258,10 +258,13 @@ Table DataMapper::fileReader(const string& fileName,bool is_first_name_and_secon
   	    	lineArray.push_back(str);
   	    }
 
-        if(count==0 && is_first_name_and_second_type) {
+        if(count==0 && has_header) {
             table.set_columns(lineArray);
         }
-        else if(count==1 && is_first_name_and_second_type) {
+        //else if(count==1 && has_header) {
+        //    table.set_key_type(lineArray);
+        //}
+        else if(count==1 && has_header) {
             table.set_columns_type(lineArray);
         }
         else {

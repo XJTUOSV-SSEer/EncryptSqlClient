@@ -14,7 +14,6 @@
 #include "seal/seal.h"
 #include "dataObject/SqlPlan.h"
 #include "Sql/SqlPlanExecutor.h"
-#include "dataObject/SqlPlan.h"
 using namespace std;
 using namespace seal;
 
@@ -460,8 +459,9 @@ void testSql() {
     table1.set_name("courseinfo");
     encrypt_service.uploadTableIntoSql(table1);
     encrypt_service.uploadTableIntoSql(table2);
-    encrypt_service.uploadJoinTableIntoSql(table1,table2,2,0);
-    vector<vector<string>> res = encrypt_service.executeSql("SELECT student.Name FROM student, courseinfo WHERE student.Course=courseinfo.Course AND courseinfo.CourseName='Math';");
+    //vector<vector<string>> res = encrypt_service.executeSql("SELECT student.Name FROM student, courseinfo WHERE student.Course=courseinfo.Course AND courseinfo.CourseName='Math';");
+    //vector<vector<string>> res = encrypt_service.executeSql("SELECT Name FROM student WHERE Course = 16;");
+    vector<vector<string>> res = encrypt_service.executeSql("SELECT SUM(Score) FROM student;");
     cout << res[0][0] << endl;
 }
 

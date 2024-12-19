@@ -61,7 +61,7 @@ public:
      * @param fileName
      * @return
      */
-    static Table fileReader( const string& fileName,bool is_first_name_and_second_type = false);
+    static Table fileReader( const string& fileName,bool has_header = false);
     SecretKey getSecretKey();
     PublicKey getPublicKey();
     SEALContext context;
